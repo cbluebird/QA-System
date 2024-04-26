@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	database.Init()
+	database.MysqlInit()
+	database.MongodbInit()
 	r:=gin.Default()
 	r.Use(midwares.ErrHandler())
 	r.NoMethod(midwares.HandleNotFound)

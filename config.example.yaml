@@ -1,4 +1,4 @@
-database:
+mysql:
   name: QA
   host: "127.0.0.1"
   port: 3306
@@ -18,3 +18,13 @@ redis:
 
 aes:
   key: 
+
+mongodb:
+  host: "127.0.0.1"
+  port: 27017
+  user: 
+  pass:
+  db: QA
+
+url:
+  host: "https://"
