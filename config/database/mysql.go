@@ -10,13 +10,13 @@ import (
 
 var DB *gorm.DB
 
-func Init() { // 初始化数据库
+func MysqlInit() { // 初始化数据库
 
-	user := config.Config.GetString("database.user")
-	pass := config.Config.GetString("database.pass")
-	port := config.Config.GetString("database.port")
-	host := config.Config.GetString("database.host")
-	name := config.Config.GetString("database.name")
+	user := config.Config.GetString("mysql.user")
+	pass := config.Config.GetString("mysql.pass")
+	port := config.Config.GetString("mysql.port")
+	host := config.Config.GetString("mysql.host")
+	name := config.Config.GetString("mysql.name")
 
 	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local", user, pass, host, port, name)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
