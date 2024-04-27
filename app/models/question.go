@@ -4,6 +4,7 @@ type Question struct {
 	ID           int    `json:"id"`
 	SurveyID     int    `json:"survey_id"`     //问卷ID
 	SerialNum    int    `json:"serial_num"`    //题目序号
+	Img          string `json:"img"`           //图片
 	Suject       string `json:"subject"`       //题目
 	Descrption   string `json:"description"`   //题目描述
 	Required     bool   `json:"required"`      //是否必填
