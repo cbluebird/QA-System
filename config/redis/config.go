@@ -1,25 +1,17 @@
 package redis
 
-import "github.com/go-redis/redis/v8"
-
-type redisConfig struct {
-	Host     string
-	Port     string
-	DB       int
-	Password string
-}
+import (
+	"github.com/go-redis/redis/v8"
+	WeJHSDK  "github.com/zjutjh/WeJH-SDK"
+)
 
 var RedisClient *redis.Client
-var RedisInfo redisConfig
+var RedisInfo WeJHSDK.RedisInfoConfig
 
 func init() {
 	info := getConfig()
 
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     info.Host + ":" + info.Port,
-		Password: info.Password,
-		DB:       info.DB,
-	})
+	RedisClient = WeJHSDK.GetRedisClient(info)
 	RedisInfo = info
 
 }
