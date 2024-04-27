@@ -8,5 +8,5 @@ type Survey struct {
 	Desc     string    `json:"desc"`     //问卷描述
 	Img      string    `json:"img"`      //问卷图片
 	Deadline time.Time `json:"deadline"` //截止时间
-	Stutus   int       `json:"status"`   //问卷状态  1:未发布 2:已发布
+	Status   int       `json:"status"`   //问卷状态  1:未发布 2:已发布
 }
