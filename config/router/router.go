@@ -15,6 +15,7 @@ func Init(r *gin.Engine) {
 		admin := api.Group("/admin")
 		{
 			admin.POST("/create", adminController.CreateSurvey)
+			admin.PUT("/update/status", adminController.UpdateSurveyStatus)
 		}
 	}
 }

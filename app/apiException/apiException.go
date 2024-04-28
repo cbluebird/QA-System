@@ -16,6 +16,7 @@ var (
 	NoThatPasswordOrWrong = NewError(http.StatusInternalServerError, 200504, "密码错误")
 	HttpTimeout           = NewError(http.StatusInternalServerError, 200505, "系统异常，请稍后重试!")
 	RequestError          = NewError(http.StatusInternalServerError, 200506, "系统异常，请稍后重试!")
+	StatusRepeatError     = NewError(http.StatusInternalServerError, 200507, "问卷状态已修改，请勿重复操作！")
 	NotInit               = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	NotFound              = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	Unknown               = NewError(http.StatusInternalServerError, 300500, "系统异常，请稍后重试!")

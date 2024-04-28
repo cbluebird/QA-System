@@ -23,6 +23,13 @@ type Question struct {
 	Options      []Option `json:"options"`       //选项
 }
 
+func GetSurveyByID(id int) (models.Survey, error) {
+	var survey models.Survey
+	err := database.DB.Where("id = ?", id).First(&survey).Error
+	return survey, err
+}
+
+
 func CreateSurvey(title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.Title = title
@@ -60,4 +67,10 @@ func CreateSurvey(title string, desc string, img string, questions []Question, s
 		}
 	}
 	return nil
+}
+
+func UpdateSurveyStatus(id int, status int) error {
+	var survey models.Survey
+	err := database.DB.Model(&survey).Where("id = ?", id).Update("status", status).Error
+	return err
 }
