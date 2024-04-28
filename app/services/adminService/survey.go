@@ -14,6 +14,7 @@ type Option struct {
 
 type Question struct {
 	ID           int      `json:"id"`
+	SerialNum    int      `json:"serial_num"`    //题目序号
 	Subject      string   `json:"subject"`       //问题
 	Description  string   `json:"description"`   //问题描述
 	Img          string   `json:"img"`           //图片
@@ -30,7 +31,6 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-
 func CreateSurvey(title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.Title = title
@@ -46,6 +46,7 @@ func CreateSurvey(title string, desc string, img string, questions []Question, s
 	for _, question := range questions {
 		var q models.Question
 		q.SurveyID = survey.ID
+		q.SerialNum = question.SerialNum
 		q.Subject = question.Subject
 		q.Description = question.Description
 		q.Img = question.Img
