@@ -16,6 +16,7 @@ func Init(r *gin.Engine) {
 		{
 			admin.POST("/create", adminController.CreateSurvey)
 			admin.PUT("/update/status", adminController.UpdateSurveyStatus)
+			admin.PUT("/update/questions", adminController.UpdateSurvey)
 		}
 	}
 }

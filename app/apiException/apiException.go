@@ -17,6 +17,7 @@ var (
 	HttpTimeout           = NewError(http.StatusInternalServerError, 200505, "系统异常，请稍后重试!")
 	RequestError          = NewError(http.StatusInternalServerError, 200506, "系统异常，请稍后重试!")
 	StatusRepeatError     = NewError(http.StatusInternalServerError, 200507, "问卷状态已修改，请勿重复操作！")
+	SurveyNumError        = NewError(http.StatusInternalServerError, 200508, "问卷已有填写记录，无法修改！")
 	NotInit               = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	NotFound              = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	Unknown               = NewError(http.StatusInternalServerError, 300500, "系统异常，请稍后重试!")
