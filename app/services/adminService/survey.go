@@ -18,6 +18,7 @@ type Question struct {
 	Description  string   `json:"description"`   //问题描述
 	Img          string   `json:"img"`           //图片
 	Required     bool     `json:"required"`      //是否必填
+	Unique       bool     `json:"unique"`        //是否唯一
 	QuestionType int      `json:"question_type"` //问题类型 1单选2多选3填空4简答5图片
 	Reg          string   `json:"reg"`           //正则表达式
 	Options      []Option `json:"options"`       //选项
@@ -49,6 +50,7 @@ func CreateSurvey(title string, desc string, img string, questions []Question, s
 		q.Description = question.Description
 		q.Img = question.Img
 		q.Required = question.Required
+		q.Unique = question.Unique
 		q.QuestionType = question.QuestionType
 		err := database.DB.Create(&q).Error
 		if err != nil {
@@ -106,6 +108,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		q.Description = question.Description
 		q.Img = question.Img
 		q.Required = question.Required
+		q.Unique = question.Unique
 		q.QuestionType = question.QuestionType
 		err := database.DB.Create(&q).Error
 		if err != nil {
