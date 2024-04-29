@@ -51,3 +51,14 @@ func GetAnswerSheetBySurveyID(surveyID int) ([]AnswerSheet, error) {
     }
     return answerSheets, nil
 }
+
+func DeleteAnswerSheetBySurveyID(surveyID int) error {
+    // 构建查询条件，指定 surveyid 为 1
+    filter := bson.M{"surveyid": 1}
+    // 删除所有满足条件的文档
+    _, err := database.MDB.DeleteMany(context.Background(), filter)
+    if err != nil {
+        return err
+    }
+    return nil
+}

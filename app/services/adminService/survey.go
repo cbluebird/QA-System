@@ -2,6 +2,7 @@ package adminService
 
 import (
 	"QA-System/app/models"
+	"QA-System/app/services/mongodbService"
 	"QA-System/config/config"
 	"QA-System/config/database"
 	"os"
@@ -158,6 +159,47 @@ func UserInManage(uid int, sid int) bool {
 	return err == nil
 }
 
+func DeleteSurvey(id int) error {
+	var survey models.Survey
+	var questions []models.Question
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return err
+	}
+	var answerSheets []mongodbService.AnswerSheet
+	answerSheets,err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return err
+	}
+	//删除图片
+	imgs ,err:= getDelImgs(id,questions,answerSheets)
+	if err != nil {
+		return err
+	}
+	urlHost := config.Config.GetString("url.host")
+	for _, img := range imgs {
+		_ = os.Remove("./static/" + strings.TrimPrefix(img, urlHost+"/static/"))
+	}
+	//删除答卷
+	err = mongodbService.DeleteAnswerSheetBySurveyID(id)
+	if err != nil {
+		return err
+	}
+	//删除问题和选项
+	for _, question := range questions {
+		err = database.DB.Where("question_id = ?", question.ID).Delete(&models.Option{}).Error
+		if err != nil {
+			return err
+		}
+	}
+	err = database.DB.Where("survey_id = ?", id).Delete(&models.Question{}).Error
+	if err != nil {
+		return err
+	}
+	err = database.DB.Where("id = ?", id).Delete(&survey).Error
+	return err
+}
+
 func contains(arr []string, str string) bool {
 	for _, a := range arr {
 		if a == str {
@@ -187,6 +229,43 @@ func getOldImgs(id int, questions []models.Question) ([]string, error) {
 				imgs = append(imgs, option.Content)
 			}
 		}
+	}
+	return imgs, nil
+}
+
+func getDelImgs(id int, questions []models.Question, answerSheets []mongodbService.AnswerSheet) ([]string, error) {
+	var imgs []string
+	var survey models.Survey
+	err := database.DB.Where("id = ?", id).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	imgs = append(imgs, survey.Img)
+	for _, question := range questions {
+		imgs = append(imgs, question.Img)
+		var options []models.Option
+		err = database.DB.Where("question_id = ?", question.ID).Find(&options).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, option := range options {
+			if option.OptionType == 2 {
+				imgs = append(imgs, option.Content)
+			}
+		}
+	}
+	for _, answerSheet := range answerSheets {
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return nil, err
+			}
+			if question.QuestionType == 5 {
+				imgs = append(imgs, answer.Content)
+			}
+		}
+		
 	}
 	return imgs, nil
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // 新建问卷
@@ -149,5 +150,46 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 
+	utils.JsonSuccessResponse(c, nil)
+}
+
+// 删除问卷
+type DeleteSurveyData struct {
+	ID int `form:"id" binding:"required"`
+}
+
+func DeleteSurvey(c *gin.Context) {
+	var data DeleteSurveyData
+	err := c.ShouldBindQuery(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
+	//鉴权
+	user, err := sessionService.GetUserSession(c)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.NotLogin)
+		return
+	}
+	// 获取问卷
+	survey, err := adminService.GetSurveyByID(data.ID)
+	if err == gorm.ErrRecordNotFound {
+		utils.JsonErrorResponse(c, apiException.SurveyNotExist)
+		return
+	}else if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	//判断权限
+	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
+	//删除问卷
+	err = adminService.DeleteSurvey(data.ID)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
 	utils.JsonSuccessResponse(c, nil)
 }
