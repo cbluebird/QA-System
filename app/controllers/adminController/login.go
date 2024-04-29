@@ -2,9 +2,11 @@ package adminController
 
 import (
 	"QA-System/app/apiException"
+	"QA-System/app/models"
 	"QA-System/app/services/adminService"
 	"QA-System/app/services/sessionService"
 	"QA-System/app/utils"
+	"QA-System/config/config"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -39,6 +41,45 @@ func Login(c *gin.Context) {
 	}
 	//设置session
 	err = sessionService.SetUserSession(c, user)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+
+	utils.JsonSuccessResponse(c, nil)
+}
+
+type RegisterData struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	Key      int    `json:"key" binding:"required"`
+}
+
+// 注册
+func Register(c *gin.Context) {
+	var data RegisterData
+	err := c.ShouldBindJSON(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
+	//判断是否有权限
+	secretKey := config.Config.GetInt("secretKey")
+	if secretKey != data.Key {
+		utils.JsonErrorResponse(c, apiException.NotSuperAdmin)
+		return
+	}
+	//判断用户是否存在
+	err = adminService.IsAdminExist(data.Username)
+	if err == nil {
+		utils.JsonErrorResponse(c, apiException.UserExist)
+		return
+	}
+	//创建用户
+	err = adminService.CreateAdmin(models.User{
+		Username: data.Username,
+		Password: data.Password,
+	})
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
