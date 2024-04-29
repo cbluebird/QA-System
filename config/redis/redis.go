@@ -1,9 +1,11 @@
 package redis
 
-import "QA-System/config/config"
-
-func getConfig() redisConfig {
-	Info := redisConfig{
+import (
+	"QA-System/config/config"
+	WeJHSDK  "github.com/zjutjh/WeJH-SDK"
+)
+func getConfig() WeJHSDK.RedisInfoConfig {
+	Info := WeJHSDK.RedisInfoConfig{
 		Host:     "localhost",
 		Port:     "6379",
 		DB:       0,

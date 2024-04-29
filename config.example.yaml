@@ -25,6 +25,7 @@ mongodb:
   user: 
   pass:
   db: QA
+  collection: QA
 
 url:
   host: "https://"
