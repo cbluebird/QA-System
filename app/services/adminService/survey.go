@@ -31,8 +31,9 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-func CreateSurvey(title string, desc string, img string, questions []Question, status int, time time.Time) error {
+func CreateSurvey(id int,title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
+	survey.UserID = id
 	survey.Title = title
 	survey.Desc = desc
 	survey.Img = img
@@ -128,4 +129,10 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		}
 	}
 	return nil
+}
+
+func UserInManage(uid int, sid int) bool {
+	var survey models.Manage
+	err := database.DB.Where("user_id = ? and survey_id = ?", uid, sid).First(&survey).Error
+	return err == nil
 }

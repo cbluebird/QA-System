@@ -25,6 +25,7 @@ var (
 	PictureError          = NewError(http.StatusInternalServerError, 200513, "仅允许上传图片文件")
 	PictureSizeError      = NewError(http.StatusInternalServerError, 200514, "图片大小超出限制")
 	NotSuperAdmin         = NewError(http.StatusInternalServerError, 200513, "很抱歉，您暂无权限注册账号")
+	NoPermission		  = NewError(http.StatusInternalServerError, 200514, "很抱歉，您暂无权限操作")
 	NotInit               = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	NotFound              = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	Unknown               = NewError(http.StatusInternalServerError, 300500, "系统异常，请稍后重试!")

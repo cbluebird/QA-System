@@ -4,6 +4,7 @@ import "time"
 
 type Survey struct {
 	ID       int       `json:"id"`
+	UserID   int       `json:"user_id"`  //用户id
 	Title    string    `json:"title"`    //问卷标题
 	Desc     string    `json:"desc"`     //问卷描述
 	Img      string    `json:"img"`      //问卷图片
