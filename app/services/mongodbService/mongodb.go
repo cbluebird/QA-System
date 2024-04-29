@@ -21,7 +21,6 @@ type AnswerSheet struct {
 }
 
 func SaveAnswerSheet(answerSheet AnswerSheet) error {
-	// Insert the answer sheet document
 	_, err := database.MDB.InsertOne(context.Background(), answerSheet)
 	if err != nil {
 		log.Fatal(err)
@@ -31,8 +30,7 @@ func SaveAnswerSheet(answerSheet AnswerSheet) error {
 
 func GetAnswerSheetBySurveyID(surveyID int) ([]AnswerSheet, error) {
     var answerSheets []AnswerSheet
-    // 构建查询条件，指定 surveyid 为 1
-    filter := bson.M{"surveyid": 1}
+    filter := bson.M{"surveyid": surveyID}
     cur, err := database.MDB.Find(context.Background(), filter)
     if err != nil {
         return nil, err
@@ -50,4 +48,14 @@ func GetAnswerSheetBySurveyID(surveyID int) ([]AnswerSheet, error) {
         return nil, err
     }
     return answerSheets, nil
+}
+
+func DeleteAnswerSheetBySurveyID(surveyID int) error {
+    filter := bson.M{"surveyid": surveyID}
+    // 删除所有满足条件的文档
+    _, err := database.MDB.DeleteMany(context.Background(), filter)
+    if err != nil {
+        return err
+    }
+    return nil
 }

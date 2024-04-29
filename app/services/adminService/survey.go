@@ -2,7 +2,11 @@ package adminService
 
 import (
 	"QA-System/app/models"
+	"QA-System/app/services/mongodbService"
+	"QA-System/config/config"
 	"QA-System/config/database"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -31,7 +35,7 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-func CreateSurvey(id int,title string, desc string, img string, questions []Question, status int, time time.Time) error {
+func CreateSurvey(id int, title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.UserID = id
 	survey.Title = title
@@ -81,8 +85,15 @@ func UpdateSurveyStatus(id int, status int) error {
 
 func UpdateSurvey(id int, title string, desc string, img string, questions []Question, time time.Time) error {
 	//遍历原有问题，删除对应选项
+	var survey models.Survey
 	var oldQuestions []models.Question
+	var old_imgs []string
+	var new_imgs []string
 	err := database.DB.Where("survey_id = ?", id).Find(&oldQuestions).Error
+	if err != nil {
+		return err
+	}
+	old_imgs, err = getOldImgs(id, oldQuestions)
 	if err != nil {
 		return err
 	}
@@ -97,11 +108,11 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		return err
 	}
 	//修改问卷信息
-	var survey models.Survey
 	err = database.DB.Model(&survey).Where("id = ?", id).Updates(map[string]interface{}{"title": title, "desc": desc, "img": img, "deadline": time}).Error
 	if err != nil {
 		return err
 	}
+	new_imgs = append(new_imgs, img)
 	//重新添加问题和选项
 	for _, question := range questions {
 		var q models.Question
@@ -112,6 +123,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		q.Required = question.Required
 		q.Unique = question.Unique
 		q.QuestionType = question.QuestionType
+		new_imgs = append(new_imgs, question.Img)
 		err := database.DB.Create(&q).Error
 		if err != nil {
 			return err
@@ -122,10 +134,20 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 			o.Content = option.Content
 			o.SerialNum = option.SerialNum
 			o.OptionType = option.OptionType
+			if option.OptionType == 2 {
+				new_imgs = append(new_imgs, option.Content)
+			}
 			err := database.DB.Create(&o).Error
 			if err != nil {
 				return err
 			}
+		}
+	}
+	urlHost := config.Config.GetString("url.host")
+	//删除无用图片
+	for _, old_img := range old_imgs {
+		if !contains(new_imgs, old_img) {
+			_ = os.Remove("./static/" + strings.TrimPrefix(old_img, urlHost+"/static/"))
 		}
 	}
 	return nil
@@ -135,4 +157,168 @@ func UserInManage(uid int, sid int) bool {
 	var survey models.Manage
 	err := database.DB.Where("user_id = ? and survey_id = ?", uid, sid).First(&survey).Error
 	return err == nil
+}
+
+func DeleteSurvey(id int) error {
+	var survey models.Survey
+	var questions []models.Question
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return err
+	}
+	var answerSheets []mongodbService.AnswerSheet
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return err
+	}
+	//删除图片
+	imgs, err := getDelImgs(id, questions, answerSheets)
+	if err != nil {
+		return err
+	}
+	urlHost := config.Config.GetString("url.host")
+	for _, img := range imgs {
+		_ = os.Remove("./static/" + strings.TrimPrefix(img, urlHost+"/static/"))
+	}
+	//删除答卷
+	err = mongodbService.DeleteAnswerSheetBySurveyID(id)
+	if err != nil {
+		return err
+	}
+	//删除问题和选项
+	for _, question := range questions {
+		err = database.DB.Where("question_id = ?", question.ID).Delete(&models.Option{}).Error
+		if err != nil {
+			return err
+		}
+	}
+	err = database.DB.Where("survey_id = ?", id).Delete(&models.Question{}).Error
+	if err != nil {
+		return err
+	}
+	err = database.DB.Where("id = ?", id).Delete(&survey).Error
+	if err != nil {
+		return err
+	}
+	err = database.DB.Where("survey_id = ?",id).Delete(&models.Manage{}).Error
+	return err
+}
+
+type QuestionAnswers struct {
+	Title    string `json:"title"`
+	Answers []string `json:"answers"`
+}
+
+func GetSurveyAnswers(id int, num int, size int) ([]QuestionAnswers, *int64, error) {
+	var data []QuestionAnswers
+	var answerSheets []mongodbService.AnswerSheet
+	var questions []models.Question
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, question := range questions {
+		var q QuestionAnswers
+		q.Title = question.Subject
+		data = append(data, q)
+	}
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	total := int64(len(answerSheets))
+	start := (num - 1) * size
+	end := num * size
+	if start >= len(answerSheets) {
+		return nil, &total, nil
+	}
+	if end > len(answerSheets) {
+		end = len(answerSheets)
+	}
+	answerSheets = answerSheets[start:end]
+	for _, answerSheet := range answerSheets {
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return nil, nil, err
+			}
+			for i, q := range data {
+				if q.Title == question.Subject {
+					data[i].Answers = append(data[i].Answers, answer.Content)
+				}
+			}
+		}
+	}
+	return data, &total, nil
+}
+
+func contains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}
+
+func getOldImgs(id int, questions []models.Question) ([]string, error) {
+	var imgs []string
+	var survey models.Survey
+	err := database.DB.Where("id = ?", id).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	imgs = append(imgs, survey.Img)
+	for _, question := range questions {
+		imgs = append(imgs, question.Img)
+		var options []models.Option
+		err = database.DB.Where("question_id = ?", question.ID).Find(&options).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, option := range options {
+			if option.OptionType == 2 {
+				imgs = append(imgs, option.Content)
+			}
+		}
+	}
+	return imgs, nil
+}
+
+func getDelImgs(id int, questions []models.Question, answerSheets []mongodbService.AnswerSheet) ([]string, error) {
+	var imgs []string
+	var survey models.Survey
+	err := database.DB.Where("id = ?", id).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	imgs = append(imgs, survey.Img)
+	for _, question := range questions {
+		imgs = append(imgs, question.Img)
+		var options []models.Option
+		err = database.DB.Where("question_id = ?", question.ID).Find(&options).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, option := range options {
+			if option.OptionType == 2 {
+				imgs = append(imgs, option.Content)
+			}
+		}
+	}
+	for _, answerSheet := range answerSheets {
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return nil, err
+			}
+			if question.QuestionType == 5 {
+				imgs = append(imgs, answer.Content)
+			}
+		}
+
+	}
+	return imgs, nil
 }
