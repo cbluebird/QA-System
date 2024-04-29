@@ -31,8 +31,9 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-func CreateSurvey(title string, desc string, img string, questions []Question, status int, time time.Time) error {
+func CreateSurvey(id int,title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
+	survey.UserID = id
 	survey.Title = title
 	survey.Desc = desc
 	survey.Img = img
