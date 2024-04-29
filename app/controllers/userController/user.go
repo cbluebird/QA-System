@@ -274,7 +274,7 @@ func UploadImg(c *gin.Context) {
 	}
 
 	urlHost := config.Config.GetString("url.host")
-	url := urlHost + "static/" + filename
+	url := urlHost + "/static/" + filename
 
 	utils.JsonSuccessResponse(c, url)
 }

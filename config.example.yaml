@@ -28,7 +28,7 @@ mongodb:
   collection: QA
 
 url:
-  host: "https://"
+  host: "https://example.com"
 
 adminKey: 
 
