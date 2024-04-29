@@ -31,7 +31,7 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-func CreateSurvey(id int,title string, desc string, img string, questions []Question, status int, time time.Time) error {
+func CreateSurvey(id int, title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.UserID = id
 	survey.Title = title
@@ -135,4 +135,38 @@ func UserInManage(uid int, sid int) bool {
 	var survey models.Manage
 	err := database.DB.Where("user_id = ? and survey_id = ?", uid, sid).First(&survey).Error
 	return err == nil
+}
+
+func GetAllSurveyByUserID(userId int) ([]interface{}, error) {
+	var surveys []models.Survey
+	err := database.DB.Model(models.Survey{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	response := getSurveyResponse(surveys)
+	return response, err
+}
+
+func GetAllSurvey() ([]interface{}, error) {
+	var surveys []models.Survey
+	err := database.DB.Model(models.Survey{}).Order("id DESC").Find(&surveys).Error
+	response := getSurveyResponse(surveys)
+	return response, err
+}
+
+func getSurveyResponse(surveys []models.Survey) []interface{} {
+	response := make([]interface{}, 0)
+	for _, survey := range surveys {
+		surveyResponse := map[string]interface{}{
+			"id":     survey.ID,
+			"title":  survey.Title,
+			"status": survey.Status,
+			"num":    survey.Num,
+		}
+		response = append(response, surveyResponse)
+	}
+	return response
+}
+
+func GetManageredSurveyByUserID(userId int) ([]models.Manage, error) {
+	var surveys []models.Manage
+	err := database.DB.Model(models.Manage{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	return surveys, err
 }

@@ -41,7 +41,7 @@ func CreateSurvey(c *gin.Context) {
 		return
 	}
 	//创建问卷
-	err = adminService.CreateSurvey(user.ID,data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
+	err = adminService.CreateSurvey(user.ID, data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
@@ -75,7 +75,7 @@ func UpdateSurveyStatus(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -122,11 +122,11 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
-	if !adminService.UserInManage(user.ID,survey.ID){
+	if !adminService.UserInManage(user.ID, survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -161,26 +161,39 @@ func GetAllSurvey(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
-	// 获取自己权限下的问卷
-	surveys, err := adminService.GetSurveyByUserID(user.ID)
-	if err != nil {
-		utils.JsonErrorResponse(c, apiException.ServerError)
-		return
-	}
+	// 获取问卷
 	response := make([]interface{}, 0)
-	for _, manage := range surveys {
-		survey, err := adminService.GetSurveyByID(manage.SurveyID)
+	if user.AdminType == 2 {
+		response, err = adminService.GetAllSurvey()
 		if err != nil {
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
-		surveyResponse := map[string]interface{}{
-			"id":     survey.ID,
-			"title":  survey.Title,
-			"status": survey.Status,
-			"num":    survey.Num,
+	} else {
+		response, err = adminService.GetAllSurveyByUserID(user.ID)
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
 		}
-		response = append(response, surveyResponse)
+		managedSurveys, err := adminService.GetManageredSurveyByUserID(user.ID)
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		for _, manage := range managedSurveys {
+			managedSurvey, err := adminService.GetSurveyByID(manage.SurveyID)
+			if err != nil {
+				utils.JsonErrorResponse(c, apiException.ServerError)
+				return
+			}
+			managedSurveyResponse := map[string]interface{}{
+				"id":     managedSurvey.ID,
+				"title":  managedSurvey.Title,
+				"status": managedSurvey.Status,
+				"num":    managedSurvey.Num,
+			}
+			response = append(response, managedSurveyResponse)
+		}
 	}
 
 	utils.JsonSuccessResponse(c, response)
