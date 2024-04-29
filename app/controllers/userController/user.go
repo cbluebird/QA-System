@@ -172,6 +172,7 @@ func GetSurvey(c *gin.Context) {
 	}
 	response := map[string]interface{}{
 		"id":        survey.ID,
+		"title":     survey.Title,
 		"time":      survey.Deadline.Format("2006-01-02 15:04:05"),
 		"desc":      survey.Desc,
 		"img":       survey.Img,

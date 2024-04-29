@@ -4,6 +4,7 @@ import (
 	"QA-System/app/apiException"
 	"QA-System/app/services/adminService"
 	"QA-System/app/services/sessionService"
+	"QA-System/app/services/userService"
 	"QA-System/app/utils"
 
 	"time"
@@ -194,6 +195,95 @@ func GetAllSurvey(c *gin.Context) {
 			}
 			response = append(response, managedSurveyResponse)
 		}
+	}
+
+	utils.JsonSuccessResponse(c, response)
+}
+
+type GetSurveyData struct {
+	ID int `form:"id" binding:"required"`
+}
+
+type SurveyData struct {
+	ID        int                    `json:"id"`
+	Time      string                 `json:"time"`
+	Desc      string                 `json:"desc"`
+	Img       string                 `json:"img"`
+	Questions []userService.Question `json:"questions"`
+}
+
+// 管理员获取问卷题面
+func GetSurvey(c *gin.Context) {
+	var data GetSurveyData
+	err := c.ShouldBindQuery(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
+	user, err := sessionService.GetUserSession(c)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.NotLogin)
+		return
+	}
+	// 获取问卷
+	survey, err := adminService.GetSurveyByID(data.ID)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	//判断权限
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
+	if !adminService.UserInManage(user.ID, survey.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
+	// 获取相应的问题
+	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	// 构建问卷响应
+	questionsResponse := make([]map[string]interface{}, 0)
+	for _, question := range questions {
+		options, err := userService.GetOptionsByQuestionID(question.ID)
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		optionsResponse := make([]map[string]interface{}, 0)
+		for _, option := range options {
+			optionResponse := map[string]interface{}{
+				"option_type": option.OptionType,
+				"content":     option.Content,
+				"serial_num":  option.SerialNum,
+			}
+			optionsResponse = append(optionsResponse, optionResponse)
+		}
+		questionMap := map[string]interface{}{
+			"id":            question.ID,
+			"serial_num":    question.SerialNum,
+			"subject":       question.Subject,
+			"describe":      question.Description,
+			"required":      question.Required,
+			"unique":        question.Unique,
+			"img":           question.Img,
+			"question_type": question.QuestionType,
+			"reg":           question.Reg,
+			"options":       optionsResponse,
+		}
+		questionsResponse = append(questionsResponse, questionMap)
+	}
+	response := map[string]interface{}{
+		"id":        survey.ID,
+		"title":     survey.Title,
+		"time":      survey.Deadline.Format("2006-01-02 15:04:05"),
+		"desc":      survey.Desc,
+		"img":       survey.Img,
+		"questions": questionsResponse,
 	}
 
 	utils.JsonSuccessResponse(c, response)

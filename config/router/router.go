@@ -28,6 +28,7 @@ func Init(r *gin.Engine) {
 			admin.PUT("/update/status", adminController.UpdateSurveyStatus)
 			admin.PUT("/update/questions", adminController.UpdateSurvey)
 			admin.GET("/list/questions", adminController.GetAllSurvey)
+			admin.GET("/single/question", adminController.GetSurvey)
 		}
 	}
 }
