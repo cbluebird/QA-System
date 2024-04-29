@@ -31,6 +31,15 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
+func GetSurveyByUserID(userId int) ([]models.Manage, error) {
+	var surveys []models.Manage
+	err := database.DB.Model(models.Manage{}).
+		Where("user_id = ?", userId).
+		Order("survey_id DESC").
+		Find(&surveys).Error
+	return surveys, err
+}
+
 func CreateSurvey(title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.Title = title

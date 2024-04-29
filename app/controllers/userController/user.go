@@ -151,6 +151,11 @@ func GetSurvey(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
+	// 判断填写时间是否在问卷有效期内
+	if !survey.Deadline.IsZero() && survey.Deadline.Before(time.Now()) {
+		utils.JsonErrorResponse(c, apiException.TimeBeyondError)
+		return
+	}
 	// 获取相应的问题
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {

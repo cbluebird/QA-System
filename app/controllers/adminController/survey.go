@@ -117,7 +117,7 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//判断问卷状态
-	if survey.Status !=1 {
+	if survey.Status != 1 {
 		utils.JsonErrorResponse(c, apiException.StatusRepeatError)
 		return
 	}
@@ -139,4 +139,35 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	utils.JsonSuccessResponse(c, nil)
+}
+
+func GetAllSurvey(c *gin.Context) {
+	user, err := sessionService.GetUserSession(c)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.NotLogin)
+		return
+	}
+	// 获取自己权限下的问卷
+	surveys, err := adminService.GetSurveyByUserID(user.ID)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	response := make([]interface{}, 0)
+	for _, manage := range surveys {
+		survey, err := adminService.GetSurveyByID(manage.SurveyID)
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		surveyResponse := map[string]interface{}{
+			"id":     survey.ID,
+			"title":  survey.Title,
+			"status": survey.Status,
+			"num":    survey.Num,
+		}
+		response = append(response, surveyResponse)
+	}
+
+	utils.JsonSuccessResponse(c, response)
 }
