@@ -16,9 +16,10 @@ func Init(r *gin.Engine) {
 	{
 		api.POST("/admin/reg", adminController.Register)
 		api.POST("/admin/login", adminController.Login)
-		user := api.Group("/user", midwares.CheckLogin)
+		user := api.Group("/user")
 		{
 			user.POST("/submit", userController.SubmitSurvey)
+			user.GET("/get", userController.GetSurvey)
 		}
 		admin := api.Group("/admin", midwares.CheckLogin)
 		{
