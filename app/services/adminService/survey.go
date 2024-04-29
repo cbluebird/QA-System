@@ -130,3 +130,9 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	}
 	return nil
 }
+
+func UserInManage(uid int, sid int) bool {
+	var survey models.Manage
+	err := database.DB.Where("user_id = ? and survey_id = ?", uid, sid).First(&survey).Error
+	return err == nil
+}

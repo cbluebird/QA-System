@@ -126,6 +126,10 @@ func UpdateSurvey(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
+	if !adminService.UserInManage(user.ID,survey.ID){
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
 	//判断问卷状态
 	if survey.Status !=1 {
 		utils.JsonErrorResponse(c, apiException.StatusRepeatError)
