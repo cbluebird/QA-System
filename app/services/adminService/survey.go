@@ -2,7 +2,10 @@ package adminService
 
 import (
 	"QA-System/app/models"
+	"QA-System/config/config"
 	"QA-System/config/database"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -81,8 +84,15 @@ func UpdateSurveyStatus(id int, status int) error {
 
 func UpdateSurvey(id int, title string, desc string, img string, questions []Question, time time.Time) error {
 	//遍历原有问题，删除对应选项
+	var survey models.Survey
 	var oldQuestions []models.Question
+	var old_imgs []string
+	var new_imgs []string
 	err := database.DB.Where("survey_id = ?", id).Find(&oldQuestions).Error
+	if err != nil {
+		return err
+	}
+	old_imgs,err= getOldImgs(id,oldQuestions)
 	if err != nil {
 		return err
 	}
@@ -97,11 +107,11 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		return err
 	}
 	//修改问卷信息
-	var survey models.Survey
 	err = database.DB.Model(&survey).Where("id = ?", id).Updates(map[string]interface{}{"title": title, "desc": desc, "img": img, "deadline": time}).Error
 	if err != nil {
 		return err
 	}
+	new_imgs = append(new_imgs, img)
 	//重新添加问题和选项
 	for _, question := range questions {
 		var q models.Question
@@ -112,6 +122,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 		q.Required = question.Required
 		q.Unique = question.Unique
 		q.QuestionType = question.QuestionType
+		new_imgs = append(new_imgs, question.Img)
 		err := database.DB.Create(&q).Error
 		if err != nil {
 			return err
@@ -122,10 +133,20 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 			o.Content = option.Content
 			o.SerialNum = option.SerialNum
 			o.OptionType = option.OptionType
+			if option.OptionType == 2 {
+				new_imgs = append(new_imgs, option.Content)
+			}
 			err := database.DB.Create(&o).Error
 			if err != nil {
 				return err
 			}
+		}
+	}
+	urlHost := config.Config.GetString("url.host")
+	//删除无用图片
+	for _, old_img := range old_imgs {
+		if !contains(new_imgs, old_img) {
+			_ = os.Remove("./static/" + strings.TrimPrefix(old_img, urlHost+"/static/"))
 		}
 	}
 	return nil
@@ -135,4 +156,37 @@ func UserInManage(uid int, sid int) bool {
 	var survey models.Manage
 	err := database.DB.Where("user_id = ? and survey_id = ?", uid, sid).First(&survey).Error
 	return err == nil
+}
+
+func contains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}
+
+func getOldImgs(id int, questions []models.Question) ([]string, error) {
+	var imgs []string
+	var survey models.Survey
+	err := database.DB.Where("id = ?", id).First(&survey).Error
+	if err != nil {
+		return nil, err
+	}
+	imgs = append(imgs, survey.Img)
+	for _, question := range questions {
+		imgs = append(imgs, question.Img)
+		var options []models.Option
+		err = database.DB.Where("question_id = ?", question.ID).Find(&options).Error
+		if err != nil {
+			return nil, err
+		}
+		for _, option := range options {
+			if option.OptionType == 2 {
+				imgs = append(imgs, option.Content)
+			}
+		}
+	}
+	return imgs, nil
 }

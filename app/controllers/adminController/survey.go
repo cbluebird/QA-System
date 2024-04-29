@@ -75,7 +75,7 @@ func UpdateSurveyStatus(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
+	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -122,11 +122,7 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
-		utils.JsonErrorResponse(c, apiException.NoPermission)
-		return
-	}
-	if !adminService.UserInManage(user.ID,survey.ID){
+	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -152,5 +148,6 @@ func UpdateSurvey(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
+
 	utils.JsonSuccessResponse(c, nil)
 }
