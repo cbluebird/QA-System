@@ -5,6 +5,7 @@ import (
 	"QA-System/app/services/adminService"
 	"QA-System/app/services/sessionService"
 	"QA-System/app/utils"
+	"math"
 
 	"time"
 
@@ -42,7 +43,7 @@ func CreateSurvey(c *gin.Context) {
 		return
 	}
 	//创建问卷
-	err = adminService.CreateSurvey(user.ID,data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
+	err = adminService.CreateSurvey(user.ID, data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
@@ -76,7 +77,7 @@ func UpdateSurveyStatus(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) && !adminService.UserInManage(user.ID, survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -123,12 +124,12 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) && !adminService.UserInManage(user.ID, survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
 	//判断问卷状态
-	if survey.Status !=1 {
+	if survey.Status != 1 {
 		utils.JsonErrorResponse(c, apiException.StatusRepeatError)
 		return
 	}
@@ -176,12 +177,12 @@ func DeleteSurvey(c *gin.Context) {
 	if err == gorm.ErrRecordNotFound {
 		utils.JsonErrorResponse(c, apiException.SurveyNotExist)
 		return
-	}else if err != nil {
+	} else if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	//判断权限
-	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID)&&!adminService.UserInManage(user.ID,survey.ID) {
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) && !adminService.UserInManage(user.ID, survey.ID) {
 		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
@@ -192,4 +193,52 @@ func DeleteSurvey(c *gin.Context) {
 		return
 	}
 	utils.JsonSuccessResponse(c, nil)
+}
+
+// 获取问卷收集数据
+type GetSurveyAnswersData struct {
+	ID       int `form:"id" binding:"required"`
+	PageNum  int `form:"page_num" binding:"required"`
+	PageSize int `form:"page_size" binding:"required"`
+}
+
+
+func GetSurveyAnswers(c *gin.Context) {
+	var data GetSurveyAnswersData
+	err := c.ShouldBindQuery(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
+	//鉴权
+	user, err := sessionService.GetUserSession(c)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.NotLogin)
+		return
+	}
+	// 获取问卷
+	survey, err := adminService.GetSurveyByID(data.ID)
+	if err == gorm.ErrRecordNotFound {
+		utils.JsonErrorResponse(c, apiException.SurveyNotExist)
+		return
+	} else if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	//判断权限
+	if (user.AdminType != 2) && (user.AdminType != 1 || survey.UserID != user.ID) && !adminService.UserInManage(user.ID, survey.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
+	//获取问卷收集数据
+	var num *int64
+	answers,num, err := adminService.GetSurveyAnswers(data.ID, data.PageNum, data.PageSize)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	utils.JsonSuccessResponse(c, gin.H{
+		"data": answers,
+		"total_page_num": math.Ceil(float64(*num) / float64(data.PageSize)),
+	})
 }

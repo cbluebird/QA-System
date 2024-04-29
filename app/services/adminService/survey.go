@@ -35,7 +35,7 @@ func GetSurveyByID(id int) (models.Survey, error) {
 	return survey, err
 }
 
-func CreateSurvey(id int,title string, desc string, img string, questions []Question, status int, time time.Time) error {
+func CreateSurvey(id int, title string, desc string, img string, questions []Question, status int, time time.Time) error {
 	var survey models.Survey
 	survey.UserID = id
 	survey.Title = title
@@ -93,7 +93,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	if err != nil {
 		return err
 	}
-	old_imgs,err= getOldImgs(id,oldQuestions)
+	old_imgs, err = getOldImgs(id, oldQuestions)
 	if err != nil {
 		return err
 	}
@@ -167,12 +167,12 @@ func DeleteSurvey(id int) error {
 		return err
 	}
 	var answerSheets []mongodbService.AnswerSheet
-	answerSheets,err = mongodbService.GetAnswerSheetBySurveyID(id)
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
 	if err != nil {
 		return err
 	}
 	//删除图片
-	imgs ,err:= getDelImgs(id,questions,answerSheets)
+	imgs, err := getDelImgs(id, questions, answerSheets)
 	if err != nil {
 		return err
 	}
@@ -198,6 +198,55 @@ func DeleteSurvey(id int) error {
 	}
 	err = database.DB.Where("id = ?", id).Delete(&survey).Error
 	return err
+}
+
+type QuestionAnswers struct {
+	Title    string `json:"title"`
+	Answers []string `json:"answers"`
+}
+
+func GetSurveyAnswers(id int, num int, size int) ([]QuestionAnswers, *int64, error) {
+	var data []QuestionAnswers
+	var answerSheets []mongodbService.AnswerSheet
+	var questions []models.Question
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, question := range questions {
+		var q QuestionAnswers
+		q.Title = question.Subject
+		data = append(data, q)
+	}
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	total := int64(len(answerSheets))
+	start := (num - 1) * size
+	end := num * size
+	if start >= len(answerSheets) {
+		return nil, &total, nil
+	}
+	if end > len(answerSheets) {
+		end = len(answerSheets)
+	}
+	answerSheets = answerSheets[start:end]
+	for _, answerSheet := range answerSheets {
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return nil, nil, err
+			}
+			for i, q := range data {
+				if q.Title == question.Subject {
+					data[i].Answers = append(data[i].Answers, answer.Content)
+				}
+			}
+		}
+	}
+	return data, &total, nil
 }
 
 func contains(arr []string, str string) bool {
@@ -265,7 +314,7 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 				imgs = append(imgs, answer.Content)
 			}
 		}
-		
+
 	}
 	return imgs, nil
 }
