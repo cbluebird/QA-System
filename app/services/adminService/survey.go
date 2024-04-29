@@ -197,6 +197,10 @@ func DeleteSurvey(id int) error {
 		return err
 	}
 	err = database.DB.Where("id = ?", id).Delete(&survey).Error
+	if err != nil {
+		return err
+	}
+	err = database.DB.Where("survey_id = ?",id).Delete(&models.Manage{}).Error
 	return err
 }
 
