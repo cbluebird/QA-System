@@ -4,6 +4,8 @@ import (
 	"QA-System/config/database"
 	"context"
 	"log"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Answer struct {
@@ -28,22 +30,24 @@ func SaveAnswerSheet(answerSheet AnswerSheet) error {
 }
 
 func GetAnswerSheetBySurveyID(surveyID int) ([]AnswerSheet, error) {
-	var answerSheets []AnswerSheet
-	cur, err := database.MDB.Find(context.Background(), AnswerSheet{SurveyID: surveyID})
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer cur.Close(context.Background())
-	for cur.Next(context.Background()) {
-		var answerSheet AnswerSheet
-		err := cur.Decode(&answerSheet)
-		if err != nil {
-			log.Fatal(err)
-		}
-		answerSheets = append(answerSheets, answerSheet)
-	}
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-	return answerSheets, nil
+    var answerSheets []AnswerSheet
+    // 构建查询条件，指定 surveyid 为 1
+    filter := bson.M{"surveyid": 1}
+    cur, err := database.MDB.Find(context.Background(), filter)
+    if err != nil {
+        return nil, err
+    }
+    defer cur.Close(context.Background()) // 关闭游标
+    for cur.Next(context.Background()) {
+        var answerSheet AnswerSheet
+        err := cur.Decode(&answerSheet)
+        if err != nil {
+            return nil, err
+        }
+        answerSheets = append(answerSheets, answerSheet)
+    }
+    if err := cur.Err(); err != nil {
+        return nil, err
+    }
+    return answerSheets, nil
 }

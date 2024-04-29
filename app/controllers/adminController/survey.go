@@ -29,7 +29,7 @@ func CreateSurvey(c *gin.Context) {
 		return
 	}
 	//鉴权
-	_, err = sessionService.GetUserSession(c)
+	user, err := sessionService.GetUserSession(c)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
@@ -41,7 +41,7 @@ func CreateSurvey(c *gin.Context) {
 		return
 	}
 	//创建问卷
-	err = adminService.CreateSurvey(data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
+	err = adminService.CreateSurvey(user.ID,data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
@@ -63,7 +63,7 @@ func UpdateSurveyStatus(c *gin.Context) {
 		return
 	}
 	//鉴权
-	_, err = sessionService.GetUserSession(c)
+	user, err := sessionService.GetUserSession(c)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
@@ -72,6 +72,11 @@ func UpdateSurveyStatus(c *gin.Context) {
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	//判断权限
+	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
 	//判断问卷状态
@@ -105,7 +110,7 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//鉴权
-	_, err = sessionService.GetUserSession(c)
+	user, err := sessionService.GetUserSession(c)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
@@ -114,6 +119,15 @@ func UpdateSurvey(c *gin.Context) {
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	//判断权限
+	if (user.AdminType !=2)&&(user.AdminType !=1||survey.UserID != user.ID) {
+		utils.JsonErrorResponse(c, apiException.NoPermission)
+		return
+	}
+	if !adminService.UserInManage(user.ID,survey.ID){
+		utils.JsonErrorResponse(c, apiException.NoPermission)
 		return
 	}
 	//判断问卷状态

@@ -5,8 +5,8 @@ import (
 	"QA-System/app/services/adminService"
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
+
 	"QA-System/config/config"
-	"fmt"
 	"github.com/gabriel-vasile/mimetype"
 	"image/jpeg"
 	"io"
@@ -81,10 +81,8 @@ func SubmitSurvey(c *gin.Context) {
 		}
 		// 判断唯一字段是否唯一
 		if question.Unique {
-			fmt.Println(1)
 			unique, err := userService.CheckUnique(data.ID, q.QuestionID, question.SerialNum, q.Answer)
 			if err != nil {
-				fmt.Println(2)
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
@@ -95,11 +93,9 @@ func SubmitSurvey(c *gin.Context) {
 
 		}
 	}
-	fmt.Println(2)
 	// 提交问卷
 	err = userService.SubmitSurvey(data.ID, data.QuestionsList)
 	if err != nil {
-		fmt.Println(5)
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -111,30 +107,11 @@ type GetSurveyData struct {
 }
 
 type SurveyData struct {
-	ID        int            `json:"id"`
-	Time      string         `json:"time"`
-	Desc      string         `json:"desc"`
-	Img       string         `json:"img"`
-	Questions []QuestionData `json:"questions"`
-}
-
-type QuestionData struct {
-	ID           int          `json:"id"`
-	SerialNum    int          `json:"serial_num"`
-	Subject      string       `json:"subject"`
-	Description  string       `json:"describe"`
-	Required     bool         `json:"required"`
-	Unique       bool         `json:"unique"`
-	Img          string       `json:"img"`
-	QuestionType int          `json:"question_type"`
-	Reg          string       `json:"reg"`
-	Options      []OptionData `json:"options"`
-}
-
-type OptionData struct {
-	OptionType int    `json:"option_type"`
-	Content    string `json:"content"`
-	SerialNum  int    `json:"serial_num"`
+	ID        int                    `json:"id"`
+	Time      string                 `json:"time"`
+	Desc      string                 `json:"desc"`
+	Img       string                 `json:"img"`
+	Questions []userService.Question `json:"questions"`
 }
 
 // 用户获取问卷

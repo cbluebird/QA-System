@@ -4,7 +4,27 @@ import (
 	"QA-System/app/models"
 	"QA-System/app/services/mongodbService"
 	"QA-System/config/database"
+
 )
+
+type Option struct {
+	SerialNum  int    `json:"serial_num"`  //选项序号
+	Content    string `json:"content"`     //选项内容
+	OptionType int    `json:"option_type"` //选项类型 1文字2图片
+}
+
+type Question struct {
+	ID           int      `json:"id"`
+	SerialNum    int      `json:"serial_num"`    //题目序号
+	Subject      string   `json:"subject"`       //问题
+	Description  string   `json:"description"`   //问题描述
+	Img          string   `json:"img"`           //图片
+	Required     bool     `json:"required"`      //是否必填
+	Unique       bool     `json:"unique"`        //是否唯一
+	QuestionType int      `json:"question_type"` //问题类型 1单选2多选3填空4简答5图片
+	Reg          string   `json:"reg"`           //正则表达式
+	Options      []Option `json:"options"`       //选项
+}
 
 type QuestionsList struct {
 	QuestionID int    `json:"question_id"`
@@ -42,6 +62,7 @@ func CheckUnique(sid int, qid int, serial_num int, content string) (bool, error)
 	if err != nil {
 		return false, err
 	}
+
 	for _, answerSheet := range answerSheets {
 		for _, answer := range answerSheet.Answers {
 			if answer.QuestionID == qid && answer.SerialNum == serial_num && answer.Content == content {
