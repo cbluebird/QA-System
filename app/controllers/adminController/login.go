@@ -50,9 +50,10 @@ func Login(c *gin.Context) {
 }
 
 type RegisterData struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	Key      int    `json:"key" binding:"required"`
+	Username      string `json:"username" binding:"required"`
+	Password      string `json:"password" binding:"required"`
+	AdminKey      int    `json:"admin_key" binding:"required"`
+	SuperAdminKey int    `json:"super_admin_key"`
 }
 
 // 注册
@@ -64,8 +65,8 @@ func Register(c *gin.Context) {
 		return
 	}
 	//判断是否有权限
-	secretKey := config.Config.GetInt("secretKey")
-	if secretKey != data.Key {
+	adminKey := config.Config.GetInt("adminKey")
+	if adminKey != data.AdminKey {
 		utils.JsonErrorResponse(c, apiException.NotSuperAdmin)
 		return
 	}
@@ -76,11 +77,28 @@ func Register(c *gin.Context) {
 		return
 	}
 	//创建用户
-	err = adminService.CreateAdmin(models.User{
-		Username: data.Username,
-		Password: data.Password,
-	})
-	if err != nil {
+	superadminKey := config.Config.GetInt("superadminKey")
+	if data.SuperAdminKey == superadminKey {
+		err = adminService.CreateAdmin(models.User{
+			Username:  data.Username,
+			Password:  data.Password,
+			AdminType: 2,
+		})
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+	} else if data.SuperAdminKey == 0 {
+		err = adminService.CreateAdmin(models.User{
+			Username:  data.Username,
+			Password:  data.Password,
+			AdminType: 1,
+		})
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+	} else {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

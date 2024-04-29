@@ -12,5 +12,6 @@ func autoMigrate(db *gorm.DB) error {
 		&models.Survey{},
 		&models.Question{},
 		&models.Option{},
+		&models.Manage{},
 	)
 }
