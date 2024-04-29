@@ -2,9 +2,11 @@ package adminController
 
 import (
 	"QA-System/app/apiException"
+	"QA-System/app/models"
 	"QA-System/app/services/adminService"
 	"QA-System/app/services/sessionService"
 	"QA-System/app/utils"
+	"QA-System/config/config"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -40,6 +42,63 @@ func Login(c *gin.Context) {
 	//设置session
 	err = sessionService.SetUserSession(c, user)
 	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+
+	utils.JsonSuccessResponse(c, nil)
+}
+
+type RegisterData struct {
+	Username      string `json:"username" binding:"required"`
+	Password      string `json:"password" binding:"required"`
+	AdminKey      int    `json:"admin_key" binding:"required"`
+	SuperAdminKey int    `json:"super_admin_key"`
+}
+
+// 注册
+func Register(c *gin.Context) {
+	var data RegisterData
+	err := c.ShouldBindJSON(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
+	//判断是否有权限
+	adminKey := config.Config.GetInt("adminKey")
+	if adminKey != data.AdminKey {
+		utils.JsonErrorResponse(c, apiException.NotSuperAdmin)
+		return
+	}
+	//判断用户是否存在
+	err = adminService.IsAdminExist(data.Username)
+	if err == nil {
+		utils.JsonErrorResponse(c, apiException.UserExist)
+		return
+	}
+	//创建用户
+	superadminKey := config.Config.GetInt("superadminKey")
+	if data.SuperAdminKey == superadminKey {
+		err = adminService.CreateAdmin(models.User{
+			Username:  data.Username,
+			Password:  data.Password,
+			AdminType: 2,
+		})
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+	} else if data.SuperAdminKey == 0 {
+		err = adminService.CreateAdmin(models.User{
+			Username:  data.Username,
+			Password:  data.Password,
+			AdminType: 1,
+		})
+		if err != nil {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+	} else {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
