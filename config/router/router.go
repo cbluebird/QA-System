@@ -20,6 +20,7 @@ func Init(r *gin.Engine) {
 		{
 			user.POST("/submit", userController.SubmitSurvey)
 			user.GET("/get", userController.GetSurvey)
+			user.POST("/upload", userController.UploadImg)
 		}
 		admin := api.Group("/admin", midwares.CheckLogin)
 		{

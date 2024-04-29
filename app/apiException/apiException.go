@@ -22,6 +22,8 @@ var (
 	RegError              = NewError(http.StatusInternalServerError, 200510, "填写内容不符合规范！")
 	UniqueError           = NewError(http.StatusInternalServerError, 200511, "填写内容重复！")
 	UserExist             = NewError(http.StatusInternalServerError, 200512, "该用户已存在")
+	PictureError          = NewError(http.StatusInternalServerError, 200513, "仅允许上传图片文件")
+	PictureSizeError      = NewError(http.StatusInternalServerError, 200514, "图片大小超出限制")
 	NotSuperAdmin         = NewError(http.StatusInternalServerError, 200513, "很抱歉，您暂无权限注册账号")
 	NotInit               = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	NotFound              = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
