@@ -9,8 +9,8 @@ import (
 
 type QuestionsList struct {
 	QuestionID int    `json:"question_id"`
-	SerialNum   int    `json:"serial_num"`
-	Answer      string `json:"answer"`
+	SerialNum  int    `json:"serial_num"`
+	Answer     string `json:"answer"`
 }
 
 func GetSurveyByID(id int) (models.Survey, error) {
@@ -25,13 +25,19 @@ func GetQuestionsBySurveyID(id int) ([]models.Question, error) {
 	return questions, err
 }
 
+func GetOptionsByQuestionID(questionId int) ([]models.Option, error) {
+	var options []models.Option
+	err := database.DB.Where("question_id = ?", questionId).Find(&options).Error
+	return options, err
+}
+
 func GetQuestionByID(id int) (models.Question, error) {
 	var question models.Question
 	err := database.DB.Where("id = ?", id).First(&question).Error
 	return question, err
 }
 
-func CheckUnique(sid int, qid int, serial_num int,content string) (bool, error) {
+func CheckUnique(sid int, qid int, serial_num int, content string) (bool, error) {
 	var answerSheets []mongodbService.AnswerSheet
 	answerSheets, err := mongodbService.GetAnswerSheetBySurveyID(sid)
 	if err != nil {
