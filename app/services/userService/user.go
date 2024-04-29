@@ -4,7 +4,7 @@ import (
 	"QA-System/app/models"
 	"QA-System/app/services/mongodbService"
 	"QA-System/config/database"
-
+	"time"
 )
 
 type Option struct {
@@ -76,6 +76,7 @@ func CheckUnique(sid int, qid int, serial_num int, content string) (bool, error)
 func SubmitSurvey(sid int, data []QuestionsList) error {
 	var answerSheet mongodbService.AnswerSheet
 	answerSheet.SurveyID = sid
+	answerSheet.Time = time.Now().Format("2006-01-02 15:04:05")
 	for _, q := range data {
 		var answer mongodbService.Answer
 		answer.QuestionID = q.QuestionID
