@@ -4,7 +4,7 @@ import (
 	"QA-System/app/apiException"
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
-	"fmt"
+
 	"regexp"
 	"time"
 
@@ -69,10 +69,8 @@ func SubmitSurvey(c *gin.Context) {
 		}
 		// 判断唯一字段是否唯一
 		if question.Unique {
-			fmt.Println(1)
 			unique, err := userService.CheckUnique(data.ID, q.QuestionID, question.SerialNum, q.Answer)
 			if err != nil {
-				fmt.Println(2)
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
@@ -83,11 +81,9 @@ func SubmitSurvey(c *gin.Context) {
 
 		}
 	}
-	fmt.Println(2)
 	// 提交问卷
 	err = userService.SubmitSurvey(data.ID, data.QuestionsList)
 	if err != nil {
-		fmt.Println(5)
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

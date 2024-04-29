@@ -4,6 +4,7 @@ import (
 	"QA-System/app/models"
 	"QA-System/app/services/mongodbService"
 	"QA-System/config/database"
+
 )
 
 type QuestionsList struct {
@@ -36,6 +37,7 @@ func CheckUnique(sid int, qid int, serial_num int,content string) (bool, error) 
 	if err != nil {
 		return false, err
 	}
+
 	for _, answerSheet := range answerSheets {
 		for _, answer := range answerSheet.Answers {
 			if answer.QuestionID == qid && answer.SerialNum == serial_num && answer.Content == content {
