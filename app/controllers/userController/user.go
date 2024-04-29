@@ -7,7 +7,6 @@ import (
 	"QA-System/app/utils"
 
 	"QA-System/config/config"
-	"fmt"
 	"github.com/gabriel-vasile/mimetype"
 	"image/jpeg"
 	"io"
@@ -108,30 +107,11 @@ type GetSurveyData struct {
 }
 
 type SurveyData struct {
-	ID        int            `json:"id"`
-	Time      string         `json:"time"`
-	Desc      string         `json:"desc"`
-	Img       string         `json:"img"`
-	Questions []QuestionData `json:"questions"`
-}
-
-type QuestionData struct {
-	ID           int          `json:"id"`
-	SerialNum    int          `json:"serial_num"`
-	Subject      string       `json:"subject"`
-	Description  string       `json:"describe"`
-	Required     bool         `json:"required"`
-	Unique       bool         `json:"unique"`
-	Img          string       `json:"img"`
-	QuestionType int          `json:"question_type"`
-	Reg          string       `json:"reg"`
-	Options      []OptionData `json:"options"`
-}
-
-type OptionData struct {
-	OptionType int    `json:"option_type"`
-	Content    string `json:"content"`
-	SerialNum  int    `json:"serial_num"`
+	ID        int                    `json:"id"`
+	Time      string                 `json:"time"`
+	Desc      string                 `json:"desc"`
+	Img       string                 `json:"img"`
+	Questions []userService.Question `json:"questions"`
 }
 
 // 用户获取问卷
