@@ -17,6 +17,7 @@ type Answer struct {
 
 type AnswerSheet struct {
 	SurveyID int      `json:"survey_id"` //问卷ID
+    Time    string   `json:"time"`      //回答时间
 	Answers  []Answer `json:"answers"`   //回答
 }
 
