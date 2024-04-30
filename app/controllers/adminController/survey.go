@@ -238,7 +238,7 @@ func GetSurveyAnswers(c *gin.Context) {
 		return
 	}
 	utils.JsonSuccessResponse(c, gin.H{
-		"data": answers,
+		"answers_data": answers,
 		"total_page_num": math.Ceil(float64(*num) / float64(data.PageSize)),
 	})
 }

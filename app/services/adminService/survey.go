@@ -209,13 +209,21 @@ type QuestionAnswers struct {
 	Answers []string `json:"answers"`
 }
 
-func GetSurveyAnswers(id int, num int, size int) ([]QuestionAnswers, *int64, error) {
+type AnswersResonse struct {
+	QuestionAnswers []QuestionAnswers `json:"question_answers"`
+	Time []string `json:"time"`
+}
+
+
+
+func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error) {
 	var data []QuestionAnswers
 	var answerSheets []mongodbService.AnswerSheet
 	var questions []models.Question
+	var time []string
 	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
 	if err != nil {
-		return nil, nil, err
+		return AnswersResonse{}, nil, err
 	}
 	for _, question := range questions {
 		var q QuestionAnswers
@@ -224,24 +232,25 @@ func GetSurveyAnswers(id int, num int, size int) ([]QuestionAnswers, *int64, err
 	}
 	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
 	if err != nil {
-		return nil, nil, err
+		return AnswersResonse{}, nil, err
 	}
 	total := int64(len(answerSheets))
 	start := (num - 1) * size
 	end := num * size
 	if start >= len(answerSheets) {
-		return nil, &total, nil
+		return AnswersResonse{}, &total, nil
 	}
 	if end > len(answerSheets) {
 		end = len(answerSheets)
 	}
 	answerSheets = answerSheets[start:end]
 	for _, answerSheet := range answerSheets {
+		time = append(time, answerSheet.Time)
 		for _, answer := range answerSheet.Answers {
 			var question models.Question
 			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
 			if err != nil {
-				return nil, nil, err
+				return AnswersResonse{}, nil, err
 			}
 			for i, q := range data {
 				if q.Title == question.Subject {
@@ -250,7 +259,7 @@ func GetSurveyAnswers(id int, num int, size int) ([]QuestionAnswers, *int64, err
 			}
 		}
 	}
-	return data, &total, nil
+	return AnswersResonse{QuestionAnswers: data, Time: time}, &total, nil
 }
 
 func contains(arr []string, str string) bool {
