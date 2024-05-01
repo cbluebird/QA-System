@@ -6,6 +6,7 @@ import (
 	"QA-System/config/config"
 	"QA-System/config/database"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -320,4 +321,131 @@ func createQuestionsAndOptions(questions []Question) ([]string,error) {
 		}
 	}
 	return imgs,nil
+}
+
+func GetAllSurveyByUserID(userId int) ([]interface{}, error) {
+	var surveys []models.Survey
+	err := database.DB.Model(models.Survey{}).Where("user_id = ?", userId).
+		Order("CASE WHEN status = 2 THEN 0 ELSE 1 END, id DESC").Find(&surveys).Error
+	response := getSurveyResponse(surveys)
+	return response, err
+}
+
+func ProcessResponse(response []interface{}, pageNum, pageSize int, title string) ([]interface{}, *int64) {
+	if title != "" {
+		filteredResponse := make([]interface{}, 0)
+		for _, item := range response {
+			itemMap := item.(map[string]interface{})
+			if strings.Contains(strings.ToLower(itemMap["title"].(string)), strings.ToLower(title)) {
+				filteredResponse = append(filteredResponse, item)
+			}
+		}
+		response = filteredResponse
+	}
+	num := int64(len(response))
+	sort.Slice(response, func(i, j int) bool {
+		return response[i].(map[string]interface{})["id"].(int) > response[j].(map[string]interface{})["id"].(int)
+	})
+	sortedResponse := make([]interface{}, 0)
+	var status2Response, status1Response []interface{}
+	for _, item := range response {
+		itemMap := item.(map[string]interface{})
+		if itemMap["status"].(int) == 2 {
+			status2Response = append(status2Response, item)
+		} else {
+			status1Response = append(status1Response, item)
+		}
+	}
+	sortedResponse = append(status2Response, status1Response...)
+
+	startIdx := (pageNum - 1) * pageSize
+	endIdx := startIdx + pageSize
+	if endIdx > len(sortedResponse) {
+		endIdx = len(sortedResponse)
+	}
+	pagedResponse := sortedResponse[startIdx:endIdx]
+
+	return pagedResponse, &num
+}
+
+func GetAllSurvey(pageNum, pageSize int, title string) ([]interface{}, *int64) {
+	var surveys []models.Survey
+	var num int64
+	query := database.DB.Model(models.Survey{}).
+		Order("CASE WHEN status = 2 THEN 0 ELSE 1 END, id DESC")
+	if title != "" {
+		title := "%" + title + "%"
+		query = query.Where("title LIKE ?", title)
+		query.Find(&surveys)
+		num = int64(len(surveys))
+	} else {
+		query.Find(&surveys)
+		num = int64(len(surveys))
+	}
+	response := getSurveyResponse(surveys)
+
+	startIdx := (pageNum - 1) * pageSize
+	endIdx := startIdx + pageSize
+	if endIdx > len(response) {
+		endIdx = len(response)
+	}
+	pagedResponse := response[startIdx:endIdx]
+
+	return pagedResponse, &num
+}
+
+func getSurveyResponse(surveys []models.Survey) []interface{} {
+	response := make([]interface{}, 0)
+	for _, survey := range surveys {
+		surveyResponse := map[string]interface{}{
+			"id":     survey.ID,
+			"title":  survey.Title,
+			"status": survey.Status,
+			"num":    survey.Num,
+		}
+		response = append(response, surveyResponse)
+	}
+	return response
+}
+
+func GetManageredSurveyByUserID(userId int) ([]models.Manage, error) {
+	var surveys []models.Manage
+	err := database.DB.Model(models.Manage{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	return surveys, err
+}
+
+func GetAllSurveyAnswers(id int) (AnswersResonse, error) {
+	var data []QuestionAnswers
+	var answerSheets []mongodbService.AnswerSheet
+	var questions []models.Question
+	var time []string
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return AnswersResonse{}, err
+	}
+	for _, question := range questions {
+		var q QuestionAnswers
+		q.Title = question.Subject
+		data = append(data, q)
+	}
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return AnswersResonse{}, err
+	}
+	for _, answerSheet := range answerSheets {
+		time = append(time, answerSheet.Time)
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return AnswersResonse{}, err
+			}
+			for i, q := range data {
+				if q.Title == question.Subject {
+					data[i].Answers = append(data[i].Answers, answer.Content)
+				}
+			}
+		}
+	}
+	return AnswersResonse{QuestionAnswers: data, Time: time}, nil
 }

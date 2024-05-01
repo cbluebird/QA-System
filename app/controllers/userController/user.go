@@ -128,6 +128,11 @@ func GetSurvey(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
+	// 判断填写时间是否在问卷有效期内
+	if !survey.Deadline.IsZero() && survey.Deadline.Before(time.Now()) {
+		utils.JsonErrorResponse(c, apiException.TimeBeyondError)
+		return
+	}
 	// 获取相应的问题
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {
@@ -152,8 +157,7 @@ func GetSurvey(c *gin.Context) {
 			optionsResponse = append(optionsResponse, optionResponse)
 		}
 		questionMap := map[string]interface{}{
-			"id":            question.ID,
-			"serial_num":    question.SerialNum,
+			"id":            question.SerialNum,
 			"subject":       question.Subject,
 			"describe":      question.Description,
 			"required":      question.Required,
@@ -167,6 +171,7 @@ func GetSurvey(c *gin.Context) {
 	}
 	response := map[string]interface{}{
 		"id":        survey.ID,
+		"title":     survey.Title,
 		"time":      survey.Deadline.Format("2006-01-02 15:04:05"),
 		"desc":      survey.Desc,
 		"img":       survey.Img,

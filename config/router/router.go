@@ -32,6 +32,11 @@ func Init(r *gin.Engine) {
 
 			admin.POST("/permission/create", adminController.CreatrPermission)
 			admin.DELETE("/permission/delete", adminController.DeletePermission)
+
+			admin.GET("/list/questions", adminController.GetAllSurvey)
+			admin.GET("/single/question", adminController.GetSurvey)
+			admin.GET("/download", adminController.DownloadFile)
+
 		}
 	}
 }
