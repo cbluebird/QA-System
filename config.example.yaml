@@ -30,6 +30,4 @@ mongodb:
 url:
   host: "https://example.com"
 
-adminKey: 
-
-superadminKey: 
+key: 
