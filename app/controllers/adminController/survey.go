@@ -246,7 +246,19 @@ func GetSurveyAnswers(c *gin.Context) {
 	})
 }
 
+type GetAllSurveyData struct {
+	PageNum  int    `form:"page_num" binding:"required"`
+	PageSize int    `form:"page_size" binding:"required"`
+	Title    string `form:"title"`
+}
+
 func GetAllSurvey(c *gin.Context) {
+	var data GetAllSurveyData
+	err := c.ShouldBindQuery(&data)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.ParamError)
+		return
+	}
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
@@ -254,8 +266,9 @@ func GetAllSurvey(c *gin.Context) {
 	}
 	// 获取问卷
 	response := make([]interface{}, 0)
+	var totalPageNum *int64
 	if user.AdminType == 2 {
-		response, err = adminService.GetAllSurvey()
+		response, totalPageNum = adminService.GetAllSurvey(data.PageNum, data.PageSize, data.Title)
 		if err != nil {
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
@@ -285,9 +298,13 @@ func GetAllSurvey(c *gin.Context) {
 			}
 			response = append(response, managedSurveyResponse)
 		}
+		response, totalPageNum = adminService.ProcessResponse(response, data.PageNum, data.PageSize, data.Title)
 	}
 
-	utils.JsonSuccessResponse(c, response)
+	utils.JsonSuccessResponse(c, gin.H{
+		"survey_list":    response,
+		"total_page_num": math.Ceil(float64(*totalPageNum) / float64(data.PageSize)),
+	})
 }
 
 type GetSurveyData struct {

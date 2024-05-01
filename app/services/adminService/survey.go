@@ -6,6 +6,7 @@ import (
 	"QA-System/config/config"
 	"QA-System/config/database"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -332,16 +333,73 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 
 func GetAllSurveyByUserID(userId int) ([]interface{}, error) {
 	var surveys []models.Survey
-	err := database.DB.Model(models.Survey{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	err := database.DB.Model(models.Survey{}).Where("user_id = ?", userId).
+		Order("CASE WHEN status = 2 THEN 0 ELSE 1 END, id DESC").Find(&surveys).Error
 	response := getSurveyResponse(surveys)
 	return response, err
 }
 
-func GetAllSurvey() ([]interface{}, error) {
+func ProcessResponse(response []interface{}, pageNum, pageSize int, title string) ([]interface{}, *int64) {
+	if title != "" {
+		filteredResponse := make([]interface{}, 0)
+		for _, item := range response {
+			itemMap := item.(map[string]interface{})
+			if strings.Contains(strings.ToLower(itemMap["title"].(string)), strings.ToLower(title)) {
+				filteredResponse = append(filteredResponse, item)
+			}
+		}
+		response = filteredResponse
+	}
+	num := int64(len(response))
+	sort.Slice(response, func(i, j int) bool {
+		return response[i].(map[string]interface{})["id"].(int) > response[j].(map[string]interface{})["id"].(int)
+	})
+	sortedResponse := make([]interface{}, 0)
+	var status2Response, status1Response []interface{}
+	for _, item := range response {
+		itemMap := item.(map[string]interface{})
+		if itemMap["status"].(int) == 2 {
+			status2Response = append(status2Response, item)
+		} else {
+			status1Response = append(status1Response, item)
+		}
+	}
+	sortedResponse = append(status2Response, status1Response...)
+
+	startIdx := (pageNum - 1) * pageSize
+	endIdx := startIdx + pageSize
+	if endIdx > len(sortedResponse) {
+		endIdx = len(sortedResponse)
+	}
+	pagedResponse := sortedResponse[startIdx:endIdx]
+
+	return pagedResponse, &num
+}
+
+func GetAllSurvey(pageNum, pageSize int, title string) ([]interface{}, *int64) {
 	var surveys []models.Survey
-	err := database.DB.Model(models.Survey{}).Order("id DESC").Find(&surveys).Error
+	var num int64
+	query := database.DB.Model(models.Survey{}).
+		Order("CASE WHEN status = 2 THEN 0 ELSE 1 END, id DESC")
+	if title != "" {
+		title := "%" + title + "%"
+		query = query.Where("title LIKE ?", title)
+		query.Find(&surveys)
+		num = int64(len(surveys))
+	} else {
+		query.Find(&surveys)
+		num = int64(len(surveys))
+	}
 	response := getSurveyResponse(surveys)
-	return response, err
+
+	startIdx := (pageNum - 1) * pageSize
+	endIdx := startIdx + pageSize
+	if endIdx > len(response) {
+		endIdx = len(response)
+	}
+	pagedResponse := response[startIdx:endIdx]
+
+	return pagedResponse, &num
 }
 
 func getSurveyResponse(surveys []models.Survey) []interface{} {
