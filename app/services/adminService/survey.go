@@ -200,21 +200,19 @@ func DeleteSurvey(id int) error {
 	if err != nil {
 		return err
 	}
-	err = database.DB.Where("survey_id = ?",id).Delete(&models.Manage{}).Error
+	err = database.DB.Where("survey_id = ?", id).Delete(&models.Manage{}).Error
 	return err
 }
 
 type QuestionAnswers struct {
-	Title    string `json:"title"`
+	Title   string   `json:"title"`
 	Answers []string `json:"answers"`
 }
 
 type AnswersResonse struct {
 	QuestionAnswers []QuestionAnswers `json:"question_answers"`
-	Time []string `json:"time"`
+	Time            []string          `json:"time"`
 }
-
-
 
 func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error) {
 	var data []QuestionAnswers
@@ -330,4 +328,74 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 
 	}
 	return imgs, nil
+}
+
+func GetAllSurveyByUserID(userId int) ([]interface{}, error) {
+	var surveys []models.Survey
+	err := database.DB.Model(models.Survey{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	response := getSurveyResponse(surveys)
+	return response, err
+}
+
+func GetAllSurvey() ([]interface{}, error) {
+	var surveys []models.Survey
+	err := database.DB.Model(models.Survey{}).Order("id DESC").Find(&surveys).Error
+	response := getSurveyResponse(surveys)
+	return response, err
+}
+
+func getSurveyResponse(surveys []models.Survey) []interface{} {
+	response := make([]interface{}, 0)
+	for _, survey := range surveys {
+		surveyResponse := map[string]interface{}{
+			"id":     survey.ID,
+			"title":  survey.Title,
+			"status": survey.Status,
+			"num":    survey.Num,
+		}
+		response = append(response, surveyResponse)
+	}
+	return response
+}
+
+func GetManageredSurveyByUserID(userId int) ([]models.Manage, error) {
+	var surveys []models.Manage
+	err := database.DB.Model(models.Manage{}).Where("user_id = ?", userId).Order("id DESC").Find(&surveys).Error
+	return surveys, err
+}
+
+func GetAllSurveyAnswers(id int) (AnswersResonse, error) {
+	var data []QuestionAnswers
+	var answerSheets []mongodbService.AnswerSheet
+	var questions []models.Question
+	var time []string
+	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
+	if err != nil {
+		return AnswersResonse{}, err
+	}
+	for _, question := range questions {
+		var q QuestionAnswers
+		q.Title = question.Subject
+		data = append(data, q)
+	}
+	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	if err != nil {
+		return AnswersResonse{}, err
+	}
+	for _, answerSheet := range answerSheets {
+		time = append(time, answerSheet.Time)
+		for _, answer := range answerSheet.Answers {
+			var question models.Question
+			err = database.DB.Where("id = ?", answer.QuestionID).First(&question).Error
+			if err != nil {
+				return AnswersResonse{}, err
+			}
+			for i, q := range data {
+				if q.Title == question.Subject {
+					data[i].Answers = append(data[i].Answers, answer.Content)
+				}
+			}
+		}
+	}
+	return AnswersResonse{QuestionAnswers: data, Time: time}, nil
 }

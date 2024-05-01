@@ -18,6 +18,7 @@ func main() {
 	r.NoMethod(midwares.HandleNotFound)
 	r.NoRoute(midwares.HandleNotFound)
 	r.Static("/static", "./static")
+	r.Static("/files", "./files")
 	session.Init(r)
 	router.Init(r)
 

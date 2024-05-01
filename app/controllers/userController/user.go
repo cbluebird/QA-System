@@ -157,8 +157,7 @@ func GetSurvey(c *gin.Context) {
 			optionsResponse = append(optionsResponse, optionResponse)
 		}
 		questionMap := map[string]interface{}{
-			"id":            question.ID,
-			"serial_num":    question.SerialNum,
+			"id":            question.SerialNum,
 			"subject":       question.Subject,
 			"describe":      question.Description,
 			"required":      question.Required,
