@@ -121,7 +121,7 @@ func DeleteSurvey(id int) error {
 		return err
 	}
 	var answerSheets []mongodbService.AnswerSheet
-	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	answerSheets,_, err = mongodbService.GetAnswerSheetBySurveyID(id,0,0)
 	if err != nil {
 		return err
 	}
@@ -175,6 +175,7 @@ func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error)
 	var questions []models.Question
 	data := make([]QuestionAnswers, 0)
 	time := make([]string, 0)
+	var total *int64
 	//获取问题
 	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
 	if err != nil {
@@ -187,21 +188,10 @@ func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error)
 		data = append(data, q)
 	}
 	//获取答卷
-	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	answerSheets,total, err = mongodbService.GetAnswerSheetBySurveyID(id,num,size)
 	if err != nil {
 		return AnswersResonse{}, nil, err
 	}
-	//分页
-	total := int64(len(answerSheets))
-	start := (num - 1) * size
-	end := num * size
-	if start >= len(answerSheets) {
-		return AnswersResonse{}, &total, nil
-	}
-	if end > len(answerSheets) {
-		end = len(answerSheets)
-	}
-	answerSheets = answerSheets[start:end]
 	//填充data
 	for _, answerSheet := range answerSheets {
 		time = append(time, answerSheet.Time)
@@ -218,7 +208,7 @@ func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error)
 			}
 		}
 	}
-	return AnswersResonse{QuestionAnswers: data, Time: time}, &total, nil
+	return AnswersResonse{QuestionAnswers: data, Time: time}, total, nil
 }
 
 func contains(arr []string, str string) bool {
@@ -430,7 +420,7 @@ func GetAllSurveyAnswers(id int) (AnswersResonse, error) {
 		q.Title = question.Subject
 		data = append(data, q)
 	}
-	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
+	answerSheets,_, err = mongodbService.GetAnswerSheetBySurveyID(id,0,0)
 	if err != nil {
 		return AnswersResonse{}, err
 	}

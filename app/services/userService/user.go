@@ -27,7 +27,7 @@ type Question struct {
 }
 
 type QuestionsList struct {
-	QuestionID int    `json:"question_id"`
+	QuestionID int    `json:"question_id" binding:"required"`
 	SerialNum  int    `json:"serial_num"`
 	Answer     string `json:"answer"`
 }
@@ -58,7 +58,7 @@ func GetQuestionByID(id int) (models.Question, error) {
 
 func CheckUnique(sid int, qid int, serial_num int, content string) (bool, error) {
 	var answerSheets []mongodbService.AnswerSheet
-	answerSheets, err := mongodbService.GetAnswerSheetBySurveyID(sid)
+	answerSheets,_, err := mongodbService.GetAnswerSheetBySurveyID(sid,0,0)
 	if err != nil {
 		return false, err
 	}
