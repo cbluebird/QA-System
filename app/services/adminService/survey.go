@@ -25,6 +25,7 @@ type Question struct {
 	Img          string   `json:"img"`           //图片
 	Required     bool     `json:"required"`      //是否必填
 	Unique       bool     `json:"unique"`        //是否唯一
+	OtherOption  bool     `json:"other_option"`  //是否有其他选项
 	QuestionType int      `json:"question_type"` //问题类型 1单选2多选3填空4简答5图片
 	Reg          string   `json:"reg"`           //正则表达式
 	Options      []Option `json:"options"`       //选项
@@ -300,6 +301,7 @@ func createQuestionsAndOptions(questions []Question) ([]string,error) {
 		q.Img = question.Img
 		q.Required = question.Required
 		q.Unique = question.Unique
+		q.OtherOption = question.OtherOption
 		q.QuestionType = question.QuestionType
 		imgs = append(imgs, question.Img)
 		err := database.DB.Create(&q).Error
@@ -346,7 +348,7 @@ func ProcessResponse(response []interface{}, pageNum, pageSize int, title string
 	sort.Slice(response, func(i, j int) bool {
 		return response[i].(map[string]interface{})["id"].(int) > response[j].(map[string]interface{})["id"].(int)
 	})
-	sortedResponse := make([]interface{}, 0)
+	var sortedResponse []interface{}
 	var status2Response, status1Response []interface{}
 	for _, item := range response {
 		itemMap := item.(map[string]interface{})
