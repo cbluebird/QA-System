@@ -162,6 +162,7 @@ func GetSurvey(c *gin.Context) {
 			"describe":      question.Description,
 			"required":      question.Required,
 			"unique":        question.Unique,
+			"other_option":  question.OtherOption,
 			"img":           question.Img,
 			"question_type": question.QuestionType,
 			"reg":           question.Reg,
