@@ -43,38 +43,12 @@ func CreateSurvey(id int, title string, desc string, img string, questions []Que
 	survey.Img = img
 	survey.Status = status
 	survey.Deadline = time
-
 	err := database.DB.Create(&survey).Error
 	if err != nil {
 		return err
 	}
-	for _, question := range questions {
-		var q models.Question
-		q.SurveyID = survey.ID
-		q.SerialNum = question.SerialNum
-		q.Subject = question.Subject
-		q.Description = question.Description
-		q.Img = question.Img
-		q.Required = question.Required
-		q.Unique = question.Unique
-		q.QuestionType = question.QuestionType
-		err := database.DB.Create(&q).Error
-		if err != nil {
-			return err
-		}
-		for _, option := range question.Options {
-			var o models.Option
-			o.QuestionID = q.ID
-			o.Content = option.Content
-			o.SerialNum = option.SerialNum
-			o.OptionType = option.OptionType
-			err := database.DB.Create(&o).Error
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	_,err = createQuestionsAndOptions(questions)
+	return err
 }
 
 func UpdateSurveyStatus(id int, status int) error {
@@ -88,7 +62,8 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	var survey models.Survey
 	var oldQuestions []models.Question
 	var old_imgs []string
-	var new_imgs []string
+	new_imgs := make([]string, 0)
+	//获取原有图片
 	err := database.DB.Where("survey_id = ?", id).Find(&oldQuestions).Error
 	if err != nil {
 		return err
@@ -97,6 +72,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	if err != nil {
 		return err
 	}
+	//删除原有问题和选项
 	for _, oldQuestion := range oldQuestions {
 		err = database.DB.Where("question_id = ?", oldQuestion.ID).Delete(&models.Option{}).Error
 		if err != nil {
@@ -114,35 +90,11 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	}
 	new_imgs = append(new_imgs, img)
 	//重新添加问题和选项
-	for _, question := range questions {
-		var q models.Question
-		q.SurveyID = survey.ID
-		q.Subject = question.Subject
-		q.Description = question.Description
-		q.Img = question.Img
-		q.Required = question.Required
-		q.Unique = question.Unique
-		q.QuestionType = question.QuestionType
-		new_imgs = append(new_imgs, question.Img)
-		err := database.DB.Create(&q).Error
-		if err != nil {
-			return err
-		}
-		for _, option := range question.Options {
-			var o models.Option
-			o.QuestionID = q.ID
-			o.Content = option.Content
-			o.SerialNum = option.SerialNum
-			o.OptionType = option.OptionType
-			if option.OptionType == 2 {
-				new_imgs = append(new_imgs, option.Content)
-			}
-			err := database.DB.Create(&o).Error
-			if err != nil {
-				return err
-			}
-		}
+	imgs,err := createQuestionsAndOptions(questions)
+	if err != nil {
+		return err
 	}
+	new_imgs = append(new_imgs, imgs...)
 	urlHost := config.Config.GetString("url.host")
 	//删除无用图片
 	for _, old_img := range old_imgs {
@@ -185,7 +137,7 @@ func DeleteSurvey(id int) error {
 	if err != nil {
 		return err
 	}
-	//删除问题和选项
+	//删除问题、选项、问卷、管理
 	for _, question := range questions {
 		err = database.DB.Where("question_id = ?", question.ID).Delete(&models.Option{}).Error
 		if err != nil {
@@ -217,23 +169,27 @@ type AnswersResonse struct {
 
 
 func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error) {
-	var data []QuestionAnswers
 	var answerSheets []mongodbService.AnswerSheet
 	var questions []models.Question
-	var time []string
+	data := make([]QuestionAnswers, 0)
+	time := make([]string, 0)
+	//获取问题
 	err := database.DB.Where("survey_id = ?", id).Find(&questions).Error
 	if err != nil {
 		return AnswersResonse{}, nil, err
 	}
+	//初始化data
 	for _, question := range questions {
 		var q QuestionAnswers
 		q.Title = question.Subject
 		data = append(data, q)
 	}
+	//获取答卷
 	answerSheets, err = mongodbService.GetAnswerSheetBySurveyID(id)
 	if err != nil {
 		return AnswersResonse{}, nil, err
 	}
+	//分页
 	total := int64(len(answerSheets))
 	start := (num - 1) * size
 	end := num * size
@@ -244,6 +200,7 @@ func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error)
 		end = len(answerSheets)
 	}
 	answerSheets = answerSheets[start:end]
+	//填充data
 	for _, answerSheet := range answerSheets {
 		time = append(time, answerSheet.Time)
 		for _, answer := range answerSheet.Answers {
@@ -330,4 +287,37 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 
 	}
 	return imgs, nil
+}
+
+func createQuestionsAndOptions(questions []Question) ([]string,error) {
+	var imgs []string
+	for _, question := range questions {
+		var q models.Question
+		q.SerialNum = question.SerialNum
+		q.Subject = question.Subject
+		q.Description = question.Description
+		q.Img = question.Img
+		q.Required = question.Required
+		q.Unique = question.Unique
+		q.QuestionType = question.QuestionType
+		imgs = append(imgs, question.Img)
+		err := database.DB.Create(&q).Error
+		if err != nil {
+			return nil,err
+		}
+		for _, option := range question.Options {
+			var o models.Option
+			o.Content = option.Content
+			o.SerialNum = option.SerialNum
+			o.OptionType = option.OptionType
+			if option.OptionType == 2 {
+				imgs = append(imgs, option.Content)
+			}
+			err := database.DB.Create(&o).Error
+			if err != nil {
+				return nil,err
+			}
+		}
+	}
+	return imgs,nil
 }
