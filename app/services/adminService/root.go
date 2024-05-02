@@ -20,3 +20,9 @@ func DeletePermission(id int, surveyID int) error {
 	err := database.DB.Where("user_id = ? AND survey_id = ?", id, surveyID).Delete(&models.Manage{}).Error
 	return err
 }
+
+func CheckPermission(id int, surveyID int) error {
+	var manage models.Manage
+	err := database.DB.Where("user_id = ? AND survey_id = ?", id, surveyID).First(&manage).Error
+	return err
+}
