@@ -27,6 +27,7 @@ var (
 	NotSuperAdmin         = NewError(http.StatusInternalServerError, 200513, "很抱歉，您暂无权限注册账号")
 	NoPermission          = NewError(http.StatusInternalServerError, 200514, "很抱歉，您暂无权限操作")
 	SurveyNotExist        = NewError(http.StatusInternalServerError, 200515, "问卷不存在")
+	PermissionExist       = NewError(http.StatusInternalServerError, 200516, "该用户已有权限")
 	NotInit               = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	NotFound              = NewError(http.StatusNotFound, 200404, http.StatusText(http.StatusNotFound))
 	Unknown               = NewError(http.StatusInternalServerError, 300500, "系统异常，请稍后重试!")

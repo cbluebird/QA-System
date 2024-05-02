@@ -49,7 +49,7 @@ func CreateSurvey(id int, title string, desc string, img string, questions []Que
 	if err != nil {
 		return err
 	}
-	_,err = createQuestionsAndOptions(questions)
+	_,err = createQuestionsAndOptions(questions, survey.ID)
 	return err
 }
 
@@ -92,7 +92,7 @@ func UpdateSurvey(id int, title string, desc string, img string, questions []Que
 	}
 	new_imgs = append(new_imgs, img)
 	//重新添加问题和选项
-	imgs,err := createQuestionsAndOptions(questions)
+	imgs,err := createQuestionsAndOptions(questions, id)
 	if err != nil {
 		return err
 	}
@@ -185,6 +185,7 @@ func GetSurveyAnswers(id int, num int, size int) (AnswersResonse, *int64, error)
 	for _, question := range questions {
 		var q QuestionAnswers
 		q.Title = question.Subject
+		q.Answers = make([]string, 0)
 		data = append(data, q)
 	}
 	//获取答卷
@@ -281,11 +282,12 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 	return imgs, nil
 }
 
-func createQuestionsAndOptions(questions []Question) ([]string,error) {
+func createQuestionsAndOptions(questions []Question,sid int) ([]string,error) {
 	var imgs []string
 	for _, question := range questions {
 		var q models.Question
 		q.SerialNum = question.SerialNum
+		q.SurveyID =  sid
 		q.Subject = question.Subject
 		q.Description = question.Description
 		q.Img = question.Img
@@ -301,6 +303,7 @@ func createQuestionsAndOptions(questions []Question) ([]string,error) {
 		for _, option := range question.Options {
 			var o models.Option
 			o.Content = option.Content
+			o.QuestionID = q.ID
 			o.SerialNum = option.SerialNum
 			o.OptionType = option.OptionType
 			if option.OptionType == 2 {
