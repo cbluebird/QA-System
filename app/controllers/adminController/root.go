@@ -36,9 +36,18 @@ func CreatrPermission(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
-	_, err = adminService.GetSurveyByID(data.SurveyID)
+	survey, err := adminService.GetSurveyByID(data.SurveyID)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	if survey.UserID == user.ID {
+		utils.JsonErrorResponse(c, apiException.PermissionBelong)
+		return
+	}
+	err =adminService.CheckPermission(user.ID, data.SurveyID)
+	if err != nil {
+		utils.JsonErrorResponse(c, apiException.PermissionExist)
 		return
 	}
 	//创建权限
@@ -77,9 +86,13 @@ func DeletePermission(c *gin.Context) {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
-	_, err = adminService.GetSurveyByID(data.SurveyID)
+	survey, err := adminService.GetSurveyByID(data.SurveyID)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
+		return
+	}
+	if survey.UserID==user.ID {
+		utils.JsonErrorResponse(c, apiException.PermissionBelong)
 		return
 	}
 	//删除权限

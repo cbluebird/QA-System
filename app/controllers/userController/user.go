@@ -12,7 +12,6 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -63,22 +62,18 @@ func SubmitSurvey(c *gin.Context) {
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
+		if question.SerialNum != q.SerialNum {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		if question.SurveyID != survey.ID {
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
 		// 判断必填字段是否为空
 		if question.Required && q.Answer == "" {
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
-		}
-		// 判断正则是否匹配
-		if question.Reg != "" {
-			match, err := regexp.MatchString(question.Reg, q.Answer)
-			if err != nil {
-				utils.JsonErrorResponse(c, apiException.ServerError)
-				return
-			}
-			if !match {
-				utils.JsonErrorResponse(c, apiException.RegError)
-				return
-			}
 		}
 		// 判断唯一字段是否唯一
 		if question.Unique {
@@ -158,7 +153,8 @@ func GetSurvey(c *gin.Context) {
 			optionsResponse = append(optionsResponse, optionResponse)
 		}
 		questionMap := map[string]interface{}{
-			"id":            question.SerialNum,
+			"id":            question.ID,
+			"serial_num":    question.SerialNum,
 			"subject":       question.Subject,
 			"describe":      question.Description,
 			"required":      question.Required,
