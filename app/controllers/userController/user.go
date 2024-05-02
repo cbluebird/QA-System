@@ -7,7 +7,6 @@ import (
 	"QA-System/app/utils"
 
 	"QA-System/config/config"
-	"github.com/gabriel-vasile/mimetype"
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -16,6 +15,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/gabriel-vasile/mimetype"
 
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
