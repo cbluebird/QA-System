@@ -11,6 +11,7 @@ func CheckLogin(c *gin.Context) {
 	isLogin := sessionService.CheckUserSession(c)
 	if !isLogin {
 		utils.JsonErrorResponse(c, apiException.NotLogin)
+		c.Abort()
 		return
 	}
 	c.Next()
