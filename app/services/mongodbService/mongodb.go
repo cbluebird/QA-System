@@ -30,7 +30,7 @@ func SaveAnswerSheet(answerSheet AnswerSheet) error {
 	return nil
 }
 
-func GetAnswerSheetBySurveyID(surveyID int, page int, pageSize int) ([]AnswerSheet, *int64, error) {
+func GetAnswerSheetBySurveyID(surveyID int, pageNum int, pageSize int) ([]AnswerSheet, *int64, error) {
 	var answerSheets []AnswerSheet
 	filter := bson.M{"surveyid": surveyID}
 
@@ -48,8 +48,8 @@ func GetAnswerSheetBySurveyID(surveyID int, page int, pageSize int) ([]AnswerShe
 
 	// 设置分页查询选项
 	opts := options.Find()
-	if page != 0 && pageSize != 0 {
-		opts.SetSkip(int64((page - 1) * pageSize)) // 计算要跳过的文档数
+	if pageNum != 0 && pageSize != 0 {
+		opts.SetSkip(int64((pageNum - 1) * pageSize)) // 计算要跳过的文档数
 		opts.SetLimit(int64(pageSize))             // 设置返回的文档数
 	}
 	// 执行分页查询
