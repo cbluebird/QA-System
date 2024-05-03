@@ -145,13 +145,14 @@ func UpdateSurvey(c *gin.Context) {
 		return
 	}
 	//解析时间转换为中国时间(UTC+8)
-	time, err := time.Parse(time.RFC3339, data.Time)
+	ddlTime, err := time.Parse(time.RFC3339, data.Time)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
+	ddlTime = ddlTime.Add(-8 * time.Hour)
 	//修改问卷
-	err = adminService.UpdateSurvey(data.ID, data.Title, data.Desc, data.Img, data.Questions, time)
+	err = adminService.UpdateSurvey(data.ID, data.Title, data.Desc, data.Img, data.Questions,ddlTime)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
@@ -496,9 +497,9 @@ func DownloadFile(c *gin.Context) {
 	}
 	// 保存Excel文件
 	fileName := survey.Title + ".xlsx"
-	filePath := "./files/" + fileName
-	if _, err := os.Stat("./files"); os.IsNotExist(err) {
-		err := os.Mkdir("./files", 0755)
+	filePath := "./xlsx/" + fileName
+	if _, err := os.Stat("./xlsx"); os.IsNotExist(err) {
+		err := os.Mkdir("./xlsx", 0755)
 		if err != nil {
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
@@ -517,5 +518,5 @@ func DownloadFile(c *gin.Context) {
 		return
 	}
 
-	utils.JsonSuccessResponse(c, config.Config.GetString("url.host")+fileName)
+	utils.JsonSuccessResponse(c, config.Config.GetString("url.host")+"/xlsx/"+fileName)
 }
