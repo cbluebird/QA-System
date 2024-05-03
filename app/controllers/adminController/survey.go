@@ -42,13 +42,14 @@ func CreateSurvey(c *gin.Context) {
 		return
 	}
 	//解析时间转换为中国时间(UTC+8)
-	time, err := time.Parse(time.RFC3339, data.Time)
+	ddlTime, err := time.Parse(time.RFC3339, data.Time)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
+	ddlTime = ddlTime.Add(-8 * time.Hour)
 	//创建问卷
-	err = adminService.CreateSurvey(user.ID, data.Title, data.Desc, data.Img, data.Questions, data.Status, time)
+	err = adminService.CreateSurvey(user.ID, data.Title, data.Desc, data.Img, data.Questions, data.Status, ddlTime)
 	if err != nil {
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
