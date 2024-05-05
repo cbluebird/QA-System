@@ -6,6 +6,7 @@ import (
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
 	"QA-System/config/config"
+	"fmt"
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -262,12 +263,27 @@ func UploadImg(c *gin.Context) {
 		return
 	}
 
-	// 替换原始文件为压缩后的JPG文件
+	//替换原始文件为压缩后的JPG文件
 	err = os.Rename(jpgFile, dst)
 	if err != nil {
-		utils.JsonErrorResponse(c, apiException.ServerError)
-		return
+		err = copyFile(jpgFile, dst)
+		if err != nil {
+			fmt.Println(1)
+			fmt.Println(err)
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		// Remove the temporary file after copying
+		err = os.Remove(jpgFile)
+		if err != nil {
+			fmt.Println(2)
+			fmt.Println(err)
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
 	}
+
+
 
 	urlHost := config.Config.GetString("url.host")
 	url := urlHost + "/static/" + filename
@@ -304,6 +320,27 @@ func convertAndCompressImage(srcPath, dstPath string) error {
 	// 以JPG格式保存调整大小的图像，并设置压缩质量为90
 	err = jpeg.Encode(dstFile, resizedImg, &jpeg.Options{Quality: 90})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil{
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil{
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil{
 		return err
 	}
 
