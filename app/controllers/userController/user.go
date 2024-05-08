@@ -6,7 +6,8 @@ import (
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
 	"QA-System/config/config"
-	"fmt"
+
+
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -268,16 +269,12 @@ func UploadImg(c *gin.Context) {
 	if err != nil {
 		err = copyFile(jpgFile, dst)
 		if err != nil {
-			fmt.Println(1)
-			fmt.Println(err)
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		// Remove the temporary file after copying
 		err = os.Remove(jpgFile)
 		if err != nil {
-			fmt.Println(2)
-			fmt.Println(err)
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}

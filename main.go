@@ -21,7 +21,6 @@ func main() {
 	r.Static("/xlsx", "./xlsx")
 	session.Init(r)
 	router.Init(r)
-
 	err := r.Run()
 	if err != nil {
 		log.Fatal("ServerStartFailed", err)
