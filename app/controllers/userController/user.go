@@ -147,7 +147,7 @@ func GetSurvey(c *gin.Context) {
 		optionsResponse := make([]map[string]interface{}, 0)
 		for _, option := range options {
 			optionResponse := map[string]interface{}{
-				"option_type": option.OptionType,
+				"img":         option.Img,
 				"content":     option.Content,
 				"serial_num":  option.SerialNum,
 			}

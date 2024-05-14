@@ -14,7 +14,7 @@ import (
 type Option struct {
 	SerialNum  int    `json:"serial_num"`  //选项序号
 	Content    string `json:"content"`     //选项内容
-	OptionType int    `json:"option_type"` //选项类型 1文字2图片
+	Img 	  string `json:"img"`         //图片
 }
 
 type Question struct {
@@ -237,9 +237,7 @@ func getOldImgs(id int, questions []models.Question) ([]string, error) {
 			return nil, err
 		}
 		for _, option := range options {
-			if option.OptionType == 2 {
-				imgs = append(imgs, option.Content)
-			}
+			imgs = append(imgs, option.Img)
 		}
 	}
 	return imgs, nil
@@ -261,9 +259,7 @@ func getDelImgs(id int, questions []models.Question, answerSheets []mongodbServi
 			return nil, err
 		}
 		for _, option := range options {
-			if option.OptionType == 2 {
-				imgs = append(imgs, option.Content)
-			}
+			imgs = append(imgs, option.Img)
 		}
 	}
 	for _, answerSheet := range answerSheets {
@@ -305,10 +301,8 @@ func createQuestionsAndOptions(questions []Question,sid int) ([]string,error) {
 			o.Content = option.Content
 			o.QuestionID = q.ID
 			o.SerialNum = option.SerialNum
-			o.OptionType = option.OptionType
-			if option.OptionType == 2 {
-				imgs = append(imgs, option.Content)
-			}
+			o.Img = option.Img
+			imgs = append(imgs, option.Img)
 			err := database.DB.Create(&o).Error
 			if err != nil {
 				return nil,err
