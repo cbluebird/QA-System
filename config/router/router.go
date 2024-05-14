@@ -37,6 +37,8 @@ func Init(r *gin.Engine) {
 			admin.GET("/single/question", adminController.GetSurvey)
 			admin.GET("/download", adminController.DownloadFile)
 
+			admin.GET("/log", adminController.GetLogMsg)
+
 		}
 	}
 }

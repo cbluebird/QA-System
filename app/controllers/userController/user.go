@@ -6,7 +6,7 @@ import (
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
 	"QA-System/config/config"
-
+	"errors"
 
 	"image/jpeg"
 	"io"
@@ -33,26 +33,31 @@ func SubmitSurvey(c *gin.Context) {
 	var data SubmitServeyData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
+		c.Error(err)
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	// 判断问卷问题和答卷问题数目是否一致
 	survey, err := userService.GetSurveyByID(data.ID)
 	if err != nil {
+		c.Error(err)
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {
+		c.Error(err)
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	if len(questions) != len(data.QuestionsList) {
+		c.Error(errors.New("问题数目不一致"))
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	// 判断填写时间是否在问卷有效期内
 	if !survey.Deadline.IsZero() && survey.Deadline.Before(time.Now()) {
+		c.Error(errors.New("填写时间已过"))
 		utils.JsonErrorResponse(c, apiException.TimeBeyondError)
 		return
 	}
@@ -60,19 +65,23 @@ func SubmitSurvey(c *gin.Context) {
 	for _, q := range data.QuestionsList {
 		question, err := userService.GetQuestionByID(q.QuestionID)
 		if err != nil {
+			c.Error(err)
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		if question.SerialNum != q.SerialNum {
+			c.Error(errors.New("问题序号不一致"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		if question.SurveyID != survey.ID {
+			c.Error(errors.New("问题不属于该问卷"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		// 判断必填字段是否为空
 		if question.Required && q.Answer == "" {
+			c.Error(errors.New("必填字段为空"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -80,10 +89,12 @@ func SubmitSurvey(c *gin.Context) {
 		if question.Unique {
 			unique, err := userService.CheckUnique(data.ID, q.QuestionID, question.SerialNum, q.Answer)
 			if err != nil {
+				c.Error(err)
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
 			if !unique {
+				c.Error(errors.New("唯一字段不唯一"))
 				utils.JsonErrorResponse(c, apiException.UniqueError)
 				return
 			}
@@ -93,6 +104,7 @@ func SubmitSurvey(c *gin.Context) {
 	// 提交问卷
 	err = userService.SubmitSurvey(data.ID, data.QuestionsList)
 	if err != nil {
+		c.Error(err)
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

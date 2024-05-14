@@ -1,39 +1,65 @@
 package midwares
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
 	"QA-System/app/apiException"
+	"os"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func ErrHandler() gin.HandlerFunc {
+	logFilePath := "app.log"
+
+	// 检查日志文件是否存在
+	if _, err := os.Stat(logFilePath); os.IsNotExist(err) {
+		// 如果日志文件不存在，则创建新的日志文件
+		_, err := os.Create(logFilePath)
+		if err != nil {
+			// 创建日志文件失败，记录错误并返回空的中间件处理函数
+			zap.S().Error("Failed to create log file:", err)
+			return func(c *gin.Context) {}
+		}
+	}
+
+	// 打开日志文件
+	logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		// 打开日志文件失败，记录错误并返回空的中间件处理函数
+		zap.S().Error("Failed to open log file:", err)
+		return func(c *gin.Context) {}
+	}
+	writeSyncer:=zapcore.AddSync(logFile)
+	encoderConfig := zap.NewProductionEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoder := zapcore.NewJSONEncoder(encoderConfig)
+	core := zapcore.NewCore(encoder,writeSyncer, zapcore.DebugLevel)
+
+	logger := zap.New(core, zap.AddCaller())
+	defer logger.Sync()
+
 	return func(c *gin.Context) {
 		c.Next()
-		fmt.Println(c.Errors)
 		if length := len(c.Errors); length > 0 {
 			e := c.Errors[length-1]
 			err := e.Err
 			if err != nil {
-				var Err *apiException.Error
-				if e, ok := err.(*apiException.Error); ok {
-					Err = e
-				} else if e, ok := err.(error); ok {
-					Err = apiException.OtherError(e.Error())
-				} else {
-					Err = apiException.ServerError
-				}
 				// TODO 建立日志系统
-
-				c.JSON(Err.StatusCode, Err)
+				logger.Error("RequestError",
+					zap.String("path", c.Request.URL.Path),
+					zap.String("method", c.Request.Method),
+					zap.String("error", err.Error()),
+				)
 				return
 			}
 		}
-
 	}
 }
 
 // HandleNotFound
-//  404处理
+// 
+//	404处理
 func HandleNotFound(c *gin.Context) {
 	err := apiException.NotFound
 	c.JSON(err.StatusCode, err)

@@ -11,6 +11,7 @@ require (
 	github.com/xuri/excelize/v2 v2.8.1
 	github.com/zjutjh/WeJH-SDK v0.0.2
 	go.mongodb.org/mongo-driver v1.14.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -58,8 +59,7 @@ require (
 	github.com/xuri/efp v0.0.0-20231025114914-d1ff6096ae53 // indirect
 	github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
