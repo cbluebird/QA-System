@@ -6,6 +6,8 @@ import (
 	"QA-System/app/services/userService"
 	"QA-System/app/utils"
 	"QA-System/config/config"
+	"errors"
+
 	"image/jpeg"
 	"io"
 	"mime/multipart"
@@ -31,26 +33,31 @@ func SubmitSurvey(c *gin.Context) {
 	var data SubmitServeyData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	// 判断问卷问题和答卷问题数目是否一致
 	survey, err := userService.GetSurveyByID(data.ID)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	if len(questions) != len(data.QuestionsList) {
+		c.Error(errors.New("问题数目不一致"))
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	// 判断填写时间是否在问卷有效期内
 	if !survey.Deadline.IsZero() && survey.Deadline.Before(time.Now()) {
+		c.Error(errors.New("填写时间已过"))
 		utils.JsonErrorResponse(c, apiException.TimeBeyondError)
 		return
 	}
@@ -58,19 +65,23 @@ func SubmitSurvey(c *gin.Context) {
 	for _, q := range data.QuestionsList {
 		question, err := userService.GetQuestionByID(q.QuestionID)
 		if err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		if question.SerialNum != q.SerialNum {
+			c.Error(errors.New("问题序号不一致"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		if question.SurveyID != survey.ID {
+			c.Error(errors.New("问题不属于该问卷"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		// 判断必填字段是否为空
 		if question.Required && q.Answer == "" {
+			c.Error(errors.New("必填字段为空"))
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -78,10 +89,12 @@ func SubmitSurvey(c *gin.Context) {
 		if question.Unique {
 			unique, err := userService.CheckUnique(data.ID, q.QuestionID, question.SerialNum, q.Answer)
 			if err != nil {
+				c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
 			if !unique {
+				c.Error(errors.New("唯一字段不唯一"))
 				utils.JsonErrorResponse(c, apiException.UniqueError)
 				return
 			}
@@ -91,6 +104,7 @@ func SubmitSurvey(c *gin.Context) {
 	// 提交问卷
 	err = userService.SubmitSurvey(data.ID, data.QuestionsList)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -114,23 +128,27 @@ func GetSurvey(c *gin.Context) {
 	var data GetSurveyData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	// 判断填写时间是否在问卷有效期内
 	if !survey.Deadline.IsZero() && survey.Deadline.Before(time.Now()) {
+		c.Error(errors.New("填写时间已过"))
 		utils.JsonErrorResponse(c, apiException.TimeBeyondError)
 		return
 	}
 	// 获取相应的问题
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -139,13 +157,14 @@ func GetSurvey(c *gin.Context) {
 	for _, question := range questions {
 		options, err := userService.GetOptionsByQuestionID(question.ID)
 		if err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		optionsResponse := make([]map[string]interface{}, 0)
 		for _, option := range options {
 			optionResponse := map[string]interface{}{
-				"option_type": option.OptionType,
+				"img":         option.Img,
 				"content":     option.Content,
 				"serial_num":  option.SerialNum,
 			}
@@ -183,6 +202,7 @@ func UploadImg(c *gin.Context) {
 	// 保存图片文件
 	file, err := c.FormFile("img")
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -199,11 +219,13 @@ func UploadImg(c *gin.Context) {
 	// 创建临时目录
 	tempDir, err := os.MkdirTemp("", "tempdir")
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -212,11 +234,13 @@ func UploadImg(c *gin.Context) {
 	tempFile := filepath.Join(tempDir, file.Filename)
 	f, err := os.Create(tempFile)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -224,11 +248,13 @@ func UploadImg(c *gin.Context) {
 	// 将上传的文件保存到临时文件中
 	src, err := file.Open()
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	defer func() {
 		if err := src.Close(); err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -236,12 +262,14 @@ func UploadImg(c *gin.Context) {
 
 	_, err = io.Copy(f, src)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	// 判断文件的MIME类型是否为图片
 	mime, err := mimetype.DetectFile(tempFile)
 	if err != nil || !strings.HasPrefix(mime.String(), "image/") {
+		c.Error(errors.New("文件类型错误"))
 		utils.JsonErrorResponse(c, apiException.PictureError)
 		return
 	}
@@ -250,6 +278,7 @@ func UploadImg(c *gin.Context) {
 	dst := "./static/" + filename
 	err = c.SaveUploadedFile(file, dst)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -258,16 +287,30 @@ func UploadImg(c *gin.Context) {
 	jpgFile := filepath.Join(tempDir, "compressed.jpg")
 	err = convertAndCompressImage(dst, jpgFile)
 	if err != nil {
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 
-	// 替换原始文件为压缩后的JPG文件
+	//替换原始文件为压缩后的JPG文件
 	err = os.Rename(jpgFile, dst)
 	if err != nil {
-		utils.JsonErrorResponse(c, apiException.ServerError)
-		return
+		err = copyFile(jpgFile, dst)
+		if err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
+		// Remove the temporary file after copying
+		err = os.Remove(jpgFile)
+		if err != nil {
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
+			utils.JsonErrorResponse(c, apiException.ServerError)
+			return
+		}
 	}
+
+
 
 	urlHost := config.Config.GetString("url.host")
 	url := urlHost + "/static/" + filename
@@ -304,6 +347,27 @@ func convertAndCompressImage(srcPath, dstPath string) error {
 	// 以JPG格式保存调整大小的图像，并设置压缩质量为90
 	err = jpeg.Encode(dstFile, resizedImg, &jpeg.Options{Quality: 90})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil{
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil{
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil{
 		return err
 	}
 

@@ -18,10 +18,9 @@ func main() {
 	r.NoMethod(midwares.HandleNotFound)
 	r.NoRoute(midwares.HandleNotFound)
 	r.Static("/static", "./static")
-	r.Static("/files", "./files")
+	r.Static("/xlsx", "./xlsx")
 	session.Init(r)
 	router.Init(r)
-
 	err := r.Run()
 	if err != nil {
 		log.Fatal("ServerStartFailed", err)

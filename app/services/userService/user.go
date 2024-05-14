@@ -5,6 +5,8 @@ import (
 	"QA-System/app/services/mongodbService"
 	"QA-System/config/database"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Option struct {
@@ -85,6 +87,10 @@ func SubmitSurvey(sid int, data []QuestionsList) error {
 		answerSheet.Answers = append(answerSheet.Answers, answer)
 	}
 	err := mongodbService.SaveAnswerSheet(answerSheet)
+	if err != nil {
+		return err
+	}
+	err=database.DB.Model(&models.Survey{}).Where("id = ?", sid).Update("num", gorm.Expr("num + ?", 1)).Error
 	if err != nil {
 		return err
 	}

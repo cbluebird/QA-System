@@ -34,13 +34,6 @@ var (
 	Unknown               = NewError(http.StatusInternalServerError, 300500, "系统异常，请稍后重试!")
 )
 
-func OtherError(message string) *Error {
-	return NewError(http.StatusForbidden, 100403, message)
-}
-
-func (e *Error) Error() string {
-	return e.Msg
-}
 
 func NewError(statusCode, Code int, msg string) *Error {
 	return &Error{
