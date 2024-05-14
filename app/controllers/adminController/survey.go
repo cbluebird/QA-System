@@ -34,14 +34,14 @@ func CreateSurvey(c *gin.Context) {
 	var data CreateSurveyData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
@@ -56,7 +56,7 @@ func CreateSurvey(c *gin.Context) {
 	//创建问卷
 	err = adminService.CreateSurvey(user.ID, data.Title, data.Desc, data.Img, data.Questions, data.Status, ddlTime)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -73,21 +73,21 @@ func UpdateSurveyStatus(c *gin.Context) {
 	var data UpdateSurveyStatusData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -106,7 +106,7 @@ func UpdateSurveyStatus(c *gin.Context) {
 	//修改问卷状态
 	err = adminService.UpdateSurveyStatus(data.ID, data.Status)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -126,21 +126,21 @@ func UpdateSurvey(c *gin.Context) {
 	var data UpdateSurveyData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -173,7 +173,7 @@ func UpdateSurvey(c *gin.Context) {
 	//修改问卷
 	err = adminService.UpdateSurvey(data.ID, data.Title, data.Desc, data.Img, data.Questions,ddlTime)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -189,25 +189,25 @@ func DeleteSurvey(c *gin.Context) {
 	var data DeleteSurveyData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err == gorm.ErrRecordNotFound {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.SurveyNotExist)
 		return
 	} else if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -220,7 +220,7 @@ func DeleteSurvey(c *gin.Context) {
 	//删除问卷
 	err = adminService.DeleteSurvey(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -238,25 +238,25 @@ func GetSurveyAnswers(c *gin.Context) {
 	var data GetSurveyAnswersData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err == gorm.ErrRecordNotFound {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.SurveyNotExist)
 		return
 	} else if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -270,7 +270,7 @@ func GetSurveyAnswers(c *gin.Context) {
 	var num *int64
 	answers, num, err := adminService.GetSurveyAnswers(data.ID, data.PageNum, data.PageSize)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -290,13 +290,13 @@ func GetAllSurvey(c *gin.Context) {
 	var data GetAllSurveyData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
@@ -306,27 +306,27 @@ func GetAllSurvey(c *gin.Context) {
 	if user.AdminType == 2 {
 		response, totalPageNum = adminService.GetAllSurvey(data.PageNum, data.PageSize, data.Title)
 		if err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 	} else {
 		response, err = adminService.GetAllSurveyByUserID(user.ID)
 		if err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		managedSurveys, err := adminService.GetManageredSurveyByUserID(user.ID)
 		if err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 		for _, manage := range managedSurveys {
 			managedSurvey, err := adminService.GetSurveyByID(manage.SurveyID)
 			if err != nil {
-				c.Error(err)
+				c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
@@ -364,20 +364,20 @@ func GetSurvey(c *gin.Context) {
 	var data GetSurveyData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -390,7 +390,7 @@ func GetSurvey(c *gin.Context) {
 	// 获取相应的问题
 	questions, err := userService.GetQuestionsBySurveyID(survey.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -399,7 +399,7 @@ func GetSurvey(c *gin.Context) {
 	for _, question := range questions {
 		options, err := userService.GetOptionsByQuestionID(question.ID)
 		if err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -448,20 +448,20 @@ func DownloadFile(c *gin.Context) {
 	var data DownloadFileData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	user, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	// 获取问卷
 	survey, err := adminService.GetSurveyByID(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -474,7 +474,7 @@ func DownloadFile(c *gin.Context) {
 	// 获取数据
 	answers, err := adminService.GetAllSurveyAnswers(data.ID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -484,7 +484,7 @@ func DownloadFile(c *gin.Context) {
 	f := excelize.NewFile()
 	streamWriter, err := f.NewStreamWriter("Sheet1")
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -493,7 +493,7 @@ func DownloadFile(c *gin.Context) {
 		Font: &excelize.Font{Bold: true},
 	})
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -512,7 +512,7 @@ func DownloadFile(c *gin.Context) {
 	// 设置列宽
 	for colIndex, width := range maxWidths {
 		if err := streamWriter.SetColWidth(colIndex+1, colIndex+1, float64(width)); err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -524,7 +524,7 @@ func DownloadFile(c *gin.Context) {
 		rowData = append(rowData, excelize.Cell{Value: qa.Title, StyleID: styleID})
 	}
 	if err := streamWriter.SetRow("A1", rowData); err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -539,20 +539,20 @@ func DownloadFile(c *gin.Context) {
 			row = append(row, answer)
 			colName, _ := excelize.ColumnNumberToName(j + 3)
 			if err := f.SetCellValue("Sheet1", colName+strconv.Itoa(i+2), answer); err != nil {
-				c.Error(err)
+				c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 				utils.JsonErrorResponse(c, apiException.ServerError)
 				return
 			}
 		}
 		if err := streamWriter.SetRow(fmt.Sprintf("A%d", i+2), row); err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 	}
 	// 关闭
 	if err := streamWriter.Flush(); err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -562,7 +562,7 @@ func DownloadFile(c *gin.Context) {
 	if _, err := os.Stat("./xlsx"); os.IsNotExist(err) {
 		err := os.Mkdir("./xlsx", 0755)
 		if err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
@@ -570,14 +570,14 @@ func DownloadFile(c *gin.Context) {
 	// 删除旧文件
 	if _, err := os.Stat(filePath); err == nil {
 		if err := os.Remove(filePath); err != nil {
-			c.Error(err)
+			c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 			utils.JsonErrorResponse(c, apiException.ServerError)
 			return
 		}
 	}
 	// 保存
 	if err := f.SaveAs(filePath); err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

@@ -2,7 +2,10 @@ package midwares
 
 import (
 	"QA-System/app/apiException"
+
+	"net/http"
 	"os"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -30,26 +33,56 @@ func ErrHandler() gin.HandlerFunc {
 		zap.S().Error("Failed to open log file:", err)
 		return func(c *gin.Context) {}
 	}
-	writeSyncer:=zapcore.AddSync(logFile)
+	writeSyncer := zapcore.AddSync(logFile)
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoder := zapcore.NewJSONEncoder(encoderConfig)
-	core := zapcore.NewCore(encoder,writeSyncer, zapcore.DebugLevel)
+	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 
 	logger := zap.New(core, zap.AddCaller())
 	defer logger.Sync()
 
 	return func(c *gin.Context) {
+		defer func() {
+			if r := recover(); r != nil {
+				// Handle panic and log the error
+				stack := debug.Stack()
+				logger.Error("Panic recovered",
+					zap.String("path", c.Request.URL.Path),
+					zap.String("method", c.Request.Method),
+					zap.Any("panic", r),
+					zap.ByteString("stacktrace", stack),
+				)
+
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"code":  http.StatusInternalServerError,
+					"msg": apiException.ServerError.Msg,
+				})
+				c.Abort()
+			}
+		}()
+
 		c.Next()
 		if length := len(c.Errors); length > 0 {
 			e := c.Errors[length-1]
 			err := e.Err
 			if err != nil {
 				// TODO 建立日志系统
-				logger.Error("RequestError",
+				var logLevel zapcore.Level
+				switch e.Type {
+				case gin.ErrorTypePublic:
+					logLevel = zapcore.ErrorLevel
+				case gin.ErrorTypeBind:
+					logLevel = zapcore.WarnLevel
+				case gin.ErrorTypePrivate:
+					logLevel = zapcore.DebugLevel
+				default:
+					logLevel = zapcore.InfoLevel
+				}
+				logger.Check(logLevel, "Error reported").Write(
 					zap.String("path", c.Request.URL.Path),
 					zap.String("method", c.Request.Method),
-					zap.String("error", err.Error()),
+					zap.Error(err),
 				)
 				return
 			}
@@ -57,11 +90,11 @@ func ErrHandler() gin.HandlerFunc {
 	}
 }
 
+
 // HandleNotFound
-// 
+//
 //	404处理
 func HandleNotFound(c *gin.Context) {
 	err := apiException.NotFound
 	c.JSON(err.StatusCode, err)
-	return
 }

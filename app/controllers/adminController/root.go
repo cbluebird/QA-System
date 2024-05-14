@@ -19,14 +19,14 @@ func CreatrPermission(c *gin.Context) {
 	var data CreatePermissionData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypeBind})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	admin, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
@@ -37,13 +37,13 @@ func CreatrPermission(c *gin.Context) {
 	}
 	user ,err:= adminService.GetUserByName(data.UserName)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	survey, err := adminService.GetSurveyByID(data.SurveyID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -54,14 +54,14 @@ func CreatrPermission(c *gin.Context) {
 	}
 	err =adminService.CheckPermission(user.ID, data.SurveyID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.PermissionExist)
 		return
 	}
 	//创建权限
 	err = adminService.CreatePermission(user.ID, data.SurveyID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -77,14 +77,14 @@ func DeletePermission(c *gin.Context) {
 	var data DeletePermissionData
 	err := c.ShouldBindQuery(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
 	//鉴权
 	admin, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
@@ -95,13 +95,13 @@ func DeletePermission(c *gin.Context) {
 	}
 	user ,err:= adminService.GetUserByName(data.UserName)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
 	survey, err := adminService.GetSurveyByID(data.SurveyID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -113,7 +113,7 @@ func DeletePermission(c *gin.Context) {
 	//删除权限
 	err = adminService.DeletePermission(user.ID, data.SurveyID)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

@@ -13,13 +13,13 @@ func GetLogMsg(c *gin.Context){
 	//鉴权
 	_, err := sessionService.GetUserSession(c)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.NotLogin)
 		return
 	}
 	data, err := adminService.GetLastLinesFromLogFile("app.log", 5)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}

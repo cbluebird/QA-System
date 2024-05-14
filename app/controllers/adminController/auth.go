@@ -23,7 +23,7 @@ func Login(c *gin.Context) {
 	var data LoginData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypeBind})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
@@ -47,7 +47,7 @@ func Login(c *gin.Context) {
 	//设置session
 	err = sessionService.SetUserSession(c, user)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
@@ -66,7 +66,7 @@ func Register(c *gin.Context) {
 	var data RegisterData
 	err := c.ShouldBindJSON(&data)
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypeBind})
 		utils.JsonErrorResponse(c, apiException.ParamError)
 		return
 	}
@@ -80,7 +80,7 @@ func Register(c *gin.Context) {
 	//判断用户是否存在
 	err = adminService.IsAdminExist(data.Username)
 	if err == nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.UserExist)
 		return
 	}
@@ -91,7 +91,7 @@ func Register(c *gin.Context) {
 		AdminType: 1,
 	})
 	if err != nil {
-		c.Error(err)
+		c.Error(&gin.Error{Err: err, Type: gin.ErrorTypePublic})
 		utils.JsonErrorResponse(c, apiException.ServerError)
 		return
 	}
